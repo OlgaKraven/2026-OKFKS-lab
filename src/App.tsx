@@ -1,0 +1,396 @@
+import {
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle2,
+  ChevronRight,
+  Database,
+  Download,
+  ExternalLink,
+  FileText,
+  Home as HomeIcon,
+  Printer,
+  Search,
+  ShieldCheck,
+} from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { courseConfig } from './config'
+import labsPayload from './data/labs.json'
+import type { DataTable, Lab } from './types'
+
+const labs = (labsPayload as { labs: Lab[] }).labs
+
+function useRoute() {
+  const readHash = () => window.location.hash || '#/'
+  const [hash, setHash] = useState(readHash)
+
+  useEffect(() => {
+    const onHashChange = () => setHash(readHash())
+    window.addEventListener('hashchange', onHashChange)
+    return () => window.removeEventListener('hashchange', onHashChange)
+  }, [])
+
+  const match = hash.match(/^#\/lab\/(\d{2})/)
+  return match ? { kind: 'lab' as const, slug: match[1] } : { kind: 'home' as const }
+}
+
+export function App() {
+  const route = useRoute()
+  const lab = route.kind === 'lab' ? labs.find((item) => item.slug === route.slug) : undefined
+
+  useEffect(() => {
+    const skipLink = document.querySelector<HTMLAnchorElement>('.skip-link')
+    const handleSkip = (event: Event) => {
+      event.preventDefault()
+      const main = document.getElementById('main-content')
+      window.setTimeout(() => {
+        main?.focus({ preventScroll: true })
+        main?.scrollIntoView({ block: 'start' })
+      }, 0)
+    }
+    skipLink?.addEventListener('click', handleSkip)
+    return () => skipLink?.removeEventListener('click', handleSkip)
+  }, [])
+
+  useEffect(() => {
+    document.title = lab
+      ? `ЛР ${lab.slug}. ${lab.title} — МДК.04.02`
+      : 'Лабораторные работы — МДК.04.02'
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  }, [lab, route.kind])
+
+  if (route.kind === 'lab' && lab) return <LabPage lab={lab} />
+  if (route.kind === 'lab') return <NotFound />
+  return <Home />
+}
+
+function Brand() {
+  return (
+    <a className="brand" href="#/" aria-label="На главную страницу курса">
+      <img src={`${import.meta.env.BASE_URL}brand/synergy-logo.png`} alt="Университет Синергия" />
+      <span>
+        <strong>МДК.04.02</strong>
+        <small>Лабораторный практикум</small>
+      </span>
+    </a>
+  )
+}
+
+function Home() {
+  const [query, setQuery] = useState('')
+  const [semester, setSemester] = useState<'all' | '7' | '8'>('all')
+  const [topic, setTopic] = useState('all')
+  const topics = useMemo(
+    () => Array.from(new Map(labs.map((lab) => [lab.topicCode, `${lab.topicCode}. ${lab.topicTitle}`]))),
+    [],
+  )
+  const visibleLabs = useMemo(() => {
+    const normalized = query.trim().toLocaleLowerCase('ru-RU')
+    return labs.filter((lab) => {
+      const matchesSemester = semester === 'all' || lab.semester === Number(semester)
+      const matchesTopic = topic === 'all' || lab.topicCode === topic
+      const haystack = `${lab.number} ${lab.title} ${lab.topicCode} ${lab.topicTitle} ${lab.practicalResult}`.toLocaleLowerCase('ru-RU')
+      return matchesSemester && matchesTopic && (!normalized || haystack.includes(normalized))
+    })
+  }, [query, semester, topic])
+
+  return (
+    <div className="site-shell">
+      <header className="site-header">
+        <Brand />
+        <nav aria-label="Разделы главной страницы">
+          <a href="#blocks">Блоки</a>
+          <a href="#labs">Работы</a>
+          <a href="#moodle">Сдача</a>
+        </nav>
+      </header>
+
+      <main id="main-content" tabIndex={-1}>
+        <section className="hero" aria-labelledby="course-title">
+          <div className="hero-copy">
+            <p className="eyebrow">7–8 семестры · 22 лабораторные · 100 баллов</p>
+            <h1 id="course-title">Качество системы видно <span>по доказательствам</span></h1>
+            <p className="hero-lead">
+              Практикум по надёжности, наблюдаемости и защите компьютерных систем. В каждой работе — рабочая ситуация,
+              полный набор исходных данных и один проверяемый результат для сдачи в Moodle.
+            </p>
+            <a className="button primary" href="#labs">Выбрать работу <ArrowRight aria-hidden="true" size={18} /></a>
+          </div>
+          <div className="hero-visual" aria-hidden="true">
+            <div className="hero-chevron" />
+            <img src={`${import.meta.env.BASE_URL}brand/okfks-rhino.webp`} alt="" />
+          </div>
+        </section>
+
+        <section className="block-section" id="blocks" aria-labelledby="blocks-title">
+          <div className="section-heading">
+            <p className="eyebrow">Структура курса</p>
+            <h2 id="blocks-title">Два профессиональных контура</h2>
+            <p>Сначала — качество эксплуатации, затем — защита компьютерных систем.</p>
+          </div>
+          <div className="block-grid">
+            <BlockCard block={1} title="Надёжность и качество в эксплуатации" semester={7} count={10} points={50} icon={<Database aria-hidden="true" />} />
+            <BlockCard block={2} title="Защита компьютерных систем" semester={8} count={12} points={50} icon={<ShieldCheck aria-hidden="true" />} />
+          </div>
+        </section>
+
+        <section className="catalog-section" id="labs" aria-labelledby="labs-title">
+          <div className="section-heading catalog-heading">
+            <div>
+              <p className="eyebrow">Каталог</p>
+              <h2 id="labs-title">Лабораторные работы</h2>
+            </div>
+            <p className="result-count" aria-live="polite">Показано: {visibleLabs.length} из {labs.length}</p>
+          </div>
+
+          <div className="filters" role="search">
+            <label className="search-box">
+              <Search aria-hidden="true" size={19} />
+              <span className="sr-only">Поиск по лабораторным работам</span>
+              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Номер, тема или практический результат" />
+            </label>
+            <fieldset className="semester-filter">
+              <legend className="sr-only">Фильтр по семестру</legend>
+              {(['all', '7', '8'] as const).map((value) => (
+                <button key={value} type="button" className={semester === value ? 'active' : ''} onClick={() => setSemester(value)} aria-pressed={semester === value}>
+                  {value === 'all' ? 'Все' : `${value} семестр`}
+                </button>
+              ))}
+            </fieldset>
+            <label className="select-field">
+              <span>Тема</span>
+              <select value={topic} onChange={(event) => setTopic(event.target.value)}>
+                <option value="all">Все темы</option>
+                {topics.map(([code, label]) => <option key={code} value={code}>{label}</option>)}
+              </select>
+            </label>
+          </div>
+
+          {visibleLabs.length ? (
+            <div className="lab-grid">
+              {visibleLabs.map((lab) => <LabCard key={lab.number} lab={lab} />)}
+            </div>
+          ) : (
+            <div className="empty-state">
+              <Search aria-hidden="true" />
+              <h3>Ничего не найдено</h3>
+              <p>Измените поисковый запрос или сбросьте фильтры.</p>
+              <button type="button" className="button secondary" onClick={() => { setQuery(''); setSemester('all'); setTopic('all') }}>Сбросить фильтры</button>
+            </div>
+          )}
+        </section>
+
+        <MoodleRules />
+      </main>
+
+      <footer className="site-footer">
+        <span>МДК.04.02 · ОК 01 · ПК 4.3 · ПК 4.4</span>
+        <a href={courseConfig.repositoryUrl}>Исходный код <ExternalLink aria-hidden="true" size={15} /></a>
+      </footer>
+    </div>
+  )
+}
+
+function BlockCard({ block, title, semester, count, points, icon }: { block: number; title: string; semester: number; count: number; points: number; icon: React.ReactNode }) {
+  return (
+    <article className={`block-card block-${block}`}>
+      <div className="block-icon">{icon}</div>
+      <p className="eyebrow">Блок {block} · {semester} семестр</p>
+      <h3>{title}</h3>
+      <div className="block-stats">
+        <span><strong>{count}</strong> работ</span>
+        <span><strong>{points}</strong> баллов</span>
+      </div>
+      <button type="button" className="text-link" onClick={() => {
+        const control = document.querySelector<HTMLButtonElement>(`.semester-filter button:nth-of-type(${semester === 7 ? 2 : 3})`)
+        control?.click()
+        document.getElementById('labs')?.scrollIntoView({ behavior: 'smooth' })
+      }}>Показать работы <ChevronRight aria-hidden="true" size={17} /></button>
+    </article>
+  )
+}
+
+function LabCard({ lab }: { lab: Lab }) {
+  return (
+    <article className="lab-card">
+      <div className="lab-card-top">
+        <span className="lab-number">ЛР {lab.slug}</span>
+        <span className="points-badge">{lab.points} {pluralizePoints(lab.points)}</span>
+      </div>
+      <p className="topic-line">Тема {lab.topicCode} · {lab.semester} семестр</p>
+      <h3>{lab.title}</h3>
+      <div className="result-preview">
+        <FileText aria-hidden="true" size={19} />
+        <p><strong>Практический результат</strong>{lab.practicalResult}</p>
+      </div>
+      <a className="button secondary" href={`#/lab/${lab.slug}`}>Открыть работу <ArrowRight aria-hidden="true" size={17} /></a>
+    </article>
+  )
+}
+
+function MoodleRules() {
+  const steps = [
+    'Скачайте шаблон Word со страницы нужной лабораторной работы.',
+    'Выполните задание по выданным исходным данным.',
+    'Заполните отчёт и удалите все серые подсказки.',
+    'Сохраните результат одним файлом .docx с рекомендуемым именем.',
+    'Прикрепите файл к соответствующему заданию в Moodle.',
+    'Откройте отправку и убедитесь, что файл действительно прикреплён.',
+  ]
+  return (
+    <section className="moodle-section" id="moodle" aria-labelledby="moodle-title">
+      <div>
+        <p className="eyebrow">Единственное место сдачи</p>
+        <h2 id="moodle-title">Один отчёт — одна отправка в Moodle</h2>
+        <p>Сайт не принимает файлы и не проверяет ответы. Итоговый материал каждой работы — один документ Word.</p>
+      </div>
+      <ol>{steps.map((step) => <li key={step}>{step}</li>)}</ol>
+    </section>
+  )
+}
+
+function LabPage({ lab }: { lab: Lab }) {
+  const previous = labs.find((item) => item.number === lab.number - 1)
+  const next = labs.find((item) => item.number === lab.number + 1)
+  const reportUrl = `${import.meta.env.BASE_URL}reports/${lab.reportFile}`
+  const sectionLinks = [
+    ['situation', 'Ситуация и цель'], ['inputs', 'Исходные данные'], ['theory', 'Теоретическая опора'],
+    ['task', 'Практическое задание'], ['result', 'Результат и доказательства'], ['assessment', 'Оценивание'],
+    ['moodle-submit', 'Сдача в Moodle'],
+  ]
+
+  const scrollToMoodle = () => document.getElementById('moodle-submit')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+
+  return (
+    <div className="lab-shell">
+      <header className="lab-header">
+        <Brand />
+        <nav aria-label="Навигация по курсу">
+          <a className="button ghost" href="#/"><HomeIcon aria-hidden="true" size={17} /> Каталог</a>
+          <button className="icon-button" type="button" onClick={() => window.print()} aria-label="Распечатать страницу"><Printer aria-hidden="true" size={19} /></button>
+        </nav>
+      </header>
+
+      <main id="main-content" className="lab-layout" tabIndex={-1}>
+        <aside className="lab-toc" aria-label="Содержание лабораторной работы">
+          <p className="toc-title">На странице</p>
+          {sectionLinks.map(([id, label]) => (
+            <button key={id} type="button" onClick={() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>{label}</button>
+          ))}
+        </aside>
+
+        <article className="lab-content">
+          <section className="lab-hero">
+            <div className="lab-meta-row">
+              <span>Блок {lab.block}</span><span>{lab.semester} семестр</span><span>{lab.points} {pluralizePoints(lab.points)}</span>
+            </div>
+            <p className="eyebrow">Лабораторная работа № {lab.number}</p>
+            <h1>{lab.title}</h1>
+            <p className="topic-heading">Тема {lab.topicCode}. {lab.topicTitle}</p>
+            <div className="competencies" aria-label="Формируемые компетенции">{lab.competencies.map((item) => <span key={item}>{item}</span>)}</div>
+            <div className="hero-actions">
+              <a className="button primary" href={reportUrl} download><Download aria-hidden="true" size={18} /> Скачать шаблон отчёта</a>
+              {courseConfig.moodleCourseUrl ? (
+                <a className="button secondary" href={courseConfig.moodleCourseUrl} target="_blank" rel="noreferrer">Сдать работу в Moodle <ExternalLink aria-hidden="true" size={17} /></a>
+              ) : (
+                <button className="button secondary" type="button" onClick={scrollToMoodle}>Сдать работу в Moodle <ChevronRight aria-hidden="true" size={17} /></button>
+              )}
+            </div>
+          </section>
+
+          <ContentSection id="situation" eyebrow="Зачем это специалисту" title="Рабочая ситуация и цель">
+            <div className="lead-card"><p>{lab.situation}</p></div>
+            <h3>Цель</h3><p>{lab.goal}</p>
+            <h3>После выполнения вы сможете</h3><Checklist items={lab.outcomes} />
+            <div className="choice-callout"><strong>Профессиональный выбор</strong><p>{lab.professionalChoice}</p></div>
+          </ContentSection>
+
+          <ContentSection id="inputs" eyebrow="Всё необходимое уже выдано" title="Исходные данные и среда">
+            <p>{lab.sourceData.intro}</p>
+            {lab.sourceData.sections.map((section) => (
+              <div className="data-section" key={section.title}>
+                <h3>{section.title}</h3>
+                {section.content?.map((item, index) => item.includes('\n')
+                  ? <pre className="source-block" key={`${section.title}-${index}`}><code>{item}</code></pre>
+                  : <p key={`${section.title}-${index}`}>{item}</p>)}
+                {section.table && <ResponsiveTable data={section.table} />}
+              </div>
+            ))}
+            <h3>Инструменты и допустимая среда</h3><Checklist items={lab.tools} compact />
+          </ContentSection>
+
+          <ContentSection id="theory" eyebrow="Быстрая опора" title="Краткая теория в карточках">
+            <div className="theory-grid">{lab.theoryCards.map((card) => (
+              <article className="theory-card" key={`${card.label}-${card.title}`}>
+                <span>{card.label}</span><h3>{card.title}</h3><p>{card.text}</p>
+              </article>
+            ))}</div>
+          </ContentSection>
+
+          <ContentSection id="task" eyebrow="Практика" title="Задание и логические этапы">
+            <h3>Что нужно сделать</h3><Checklist items={lab.task} numbered />
+            <h3>Логические этапы выполнения</h3><Workflow stages={lab.stages} />
+          </ContentSection>
+
+          <ContentSection id="result" eyebrow="Проверяемый итог" title="Результат, доказательства и самопроверка">
+            <div className="result-banner"><FileText aria-hidden="true" /><div><strong>Практический результат</strong><p>{lab.practicalResult}</p></div></div>
+            <div className="two-column">
+              <div><h3>Что должно быть получено</h3><Checklist items={lab.deliverables} /></div>
+              <div><h3>Какие доказательства приложить</h3><Checklist items={lab.evidence} /></div>
+            </div>
+            <h3>Самопроверка</h3><Checklist items={lab.selfCheck} checkboxes />
+            <h3>Требования к Word-файлу</h3><Checklist items={lab.wordRequirements} />
+            <p className="filename"><strong>Рекомендуемое имя:</strong> <code>{lab.recommendedFileName}</code></p>
+            <a className="button primary" href={reportUrl} download><Download aria-hidden="true" size={18} /> Скачать {lab.reportFile}</a>
+          </ContentSection>
+
+          <ContentSection id="assessment" eyebrow={`${lab.points} ${pluralizePoints(lab.points)}`} title="Критерии оценивания">
+            <div className="table-scroll"><table className="rubric-table"><thead><tr><th>Критерий</th><th>Что учитывается</th><th>Баллы</th></tr></thead><tbody>{lab.rubric.map((item) => (
+              <tr key={item.criterion}><td>{item.criterion}</td><td>{item.description}</td><td>{item.points}</td></tr>
+            ))}</tbody><tfoot><tr><th colSpan={2}>Итого</th><th>{lab.points}</th></tr></tfoot></table></div>
+            <p className="note">Объём текста сам по себе не оценивается: важны корректность результата, доказательства и профессиональный вывод.</p>
+          </ContentSection>
+
+          <section className="submit-card" id="moodle-submit" aria-labelledby="submit-title">
+            <div><p className="eyebrow">Финальный шаг</p><h2 id="submit-title">Сдать один файл .docx в Moodle</h2></div>
+            <ol>{lab.moodleSteps.map((step) => <li key={step}>{step}</li>)}</ol>
+            {courseConfig.moodleCourseUrl ? (
+              <a className="button primary" href={courseConfig.moodleCourseUrl} target="_blank" rel="noreferrer">Открыть Moodle <ExternalLink aria-hidden="true" size={17} /></a>
+            ) : <p className="moodle-placeholder">Ссылка на курс Moodle настраивается преподавателем в <code>src/config.ts</code>.</p>}
+          </section>
+
+          <nav className="lab-pager" aria-label="Соседние лабораторные работы">
+            {previous ? <a href={`#/lab/${previous.slug}`}><ArrowLeft aria-hidden="true" /> <span><small>Предыдущая</small>ЛР {previous.slug}</span></a> : <span />}
+            {next ? <a href={`#/lab/${next.slug}`}><span><small>Следующая</small>ЛР {next.slug}</span> <ArrowRight aria-hidden="true" /></a> : <span />}
+          </nav>
+        </article>
+      </main>
+    </div>
+  )
+}
+
+function ContentSection({ id, eyebrow, title, children }: { id: string; eyebrow: string; title: string; children: React.ReactNode }) {
+  return <section className="content-section" id={id}><p className="eyebrow">{eyebrow}</p><h2>{title}</h2>{children}</section>
+}
+
+function Checklist({ items, compact = false, numbered = false, checkboxes = false }: { items: string[]; compact?: boolean; numbered?: boolean; checkboxes?: boolean }) {
+  const Tag = numbered ? 'ol' : 'ul'
+  return <Tag className={`checklist ${compact ? 'compact' : ''} ${checkboxes ? 'with-boxes' : ''}`}>{items.map((item) => <li key={item}>{!numbered && !checkboxes && <CheckCircle2 aria-hidden="true" size={18} />}{item}</li>)}</Tag>
+}
+
+function Workflow({ stages }: { stages: string[] }) {
+  return <ol className="workflow">{stages.map((stage, index) => <li key={stage}><span>{index + 1}</span><p>{stage}</p></li>)}</ol>
+}
+
+function ResponsiveTable({ data }: { data: DataTable }) {
+  return <figure className="data-table"><div className="table-scroll"><table><thead><tr>{data.columns.map((column) => <th key={column}>{column}</th>)}</tr></thead><tbody>{data.rows.map((row, rowIndex) => <tr key={`${rowIndex}-${row.join('-')}`}>{row.map((cell, cellIndex) => <td key={`${cellIndex}-${cell}`}>{cell}</td>)}</tr>)}</tbody></table></div>{data.title && <figcaption>{data.title}</figcaption>}</figure>
+}
+
+function NotFound() {
+  return <main id="main-content" className="not-found" tabIndex={-1}><FileText aria-hidden="true" size={48} /><h1>Работа не найдена</h1><p>Проверьте номер в ссылке или вернитесь в каталог.</p><a className="button primary" href="#/">Открыть каталог</a></main>
+}
+
+function pluralizePoints(points: number) {
+  if (points === 1) return 'балл'
+  if (points >= 2 && points <= 4) return 'балла'
+  return 'баллов'
+}
