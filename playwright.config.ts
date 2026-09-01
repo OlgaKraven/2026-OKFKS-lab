@@ -15,7 +15,7 @@ export default defineConfig({
     { name: 'mobile-chromium', use: { ...devices['Pixel 7'] } },
   ],
   webServer: {
-    command: 'pnpm run build && pnpm run preview -- --host 127.0.0.1 --port 4173',
+    command: 'pnpm run build && pnpm exec vite preview --host 127.0.0.1 --port 4173',
     url: 'http://127.0.0.1:4173/2026-OKFKS-lab/',
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
