@@ -39,7 +39,9 @@ pnpm preview
 
 ## Публикация
 
-Workflow `.github/workflows/pages.yml` проверяет содержимое, TypeScript, unit-тесты, сборку и оба браузерных профиля Playwright, после чего публикует `dist/` в GitHub Pages из ветки `main`. После включения источника GitHub Actions ожидаемый адрес проекта: `https://olgakraven.github.io/2026-OKFKS-lab/`.
+Сайт опубликован: [https://olgakraven.github.io/2026-OKFKS-lab/](https://olgakraven.github.io/2026-OKFKS-lab/).
+
+Workflow `.github/workflows/pages.yml` при каждом изменении ветки `main` проверяет содержимое, TypeScript, unit-тесты, сборку и оба браузерных профиля Playwright, после чего публикует `dist/` в GitHub Pages.
 
 ## Документация
 
