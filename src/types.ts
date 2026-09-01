@@ -21,12 +21,6 @@ export interface SourceData {
   sections: DataSection[]
 }
 
-export interface RubricItem {
-  criterion: string
-  points: number
-  description: string
-}
-
 export interface Lab {
   number: number
   slug: string
@@ -51,9 +45,8 @@ export interface Lab {
   evidence: string[]
   selfCheck: string[]
   wordRequirements: string[]
-  rubric: RubricItem[]
   professionalChoice: string
-  moodleSteps: string[]
+  lmsSteps: string[]
   reportFile: string
   recommendedFileName: string
 }

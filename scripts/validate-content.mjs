@@ -29,7 +29,7 @@ const officialTitles = [
   'Проверка защищённости системы по регламенту и оформление заключения',
   'Разработка предложений по устранению выявленных недостатков защиты',
 ]
-const requiredArrays = ['competencies', 'outcomes', 'tools', 'theoryCards', 'task', 'stages', 'deliverables', 'evidence', 'selfCheck', 'wordRequirements', 'rubric', 'moodleSteps']
+const requiredArrays = ['competencies', 'outcomes', 'tools', 'theoryCards', 'task', 'stages', 'deliverables', 'evidence', 'selfCheck', 'wordRequirements', 'lmsSteps']
 const requiredStrings = ['slug', 'title', 'blockTitle', 'topicCode', 'topicTitle', 'practicalResult', 'situation', 'goal', 'professionalChoice', 'reportFile', 'recommendedFileName']
 const forbiddenPatterns = [
   /\bминут/iu,
@@ -70,10 +70,7 @@ for (const lab of labs) {
   if (!lab.sourceData?.intro?.trim() || !Array.isArray(lab.sourceData.sections) || !lab.sourceData.sections.length) errors.push(`${prefix}: недостаточно исходных данных.`)
   if (lab.theoryCards?.length < 3 || lab.theoryCards?.length > 7) errors.push(`${prefix}: должно быть 3–7 карточек теории.`)
   if (lab.stages?.length !== 6) errors.push(`${prefix}: должно быть ровно 6 логических этапов.`)
-  if (lab.moodleSteps?.length !== 6) errors.push(`${prefix}: должно быть 6 шагов сдачи в Moodle.`)
-  if (lab.rubric?.length !== 5) errors.push(`${prefix}: рубрика должна содержать 5 критериев.`)
-  const rubricTotal = lab.rubric?.reduce((sum, item) => sum + Number(item.points || 0), 0)
-  if (rubricTotal !== lab.points) errors.push(`${prefix}: рубрика даёт ${rubricTotal}, ожидалось ${lab.points}.`)
+  if (lab.lmsSteps?.length !== 6) errors.push(`${prefix}: должно быть 6 шагов сдачи в LMS.`)
   const expectedReport = `LR${expectedSlug}_template.docx`
   if (lab.reportFile !== expectedReport) errors.push(`${prefix}: имя шаблона должно быть ${expectedReport}.`)
   if (lab.recommendedFileName !== `Фамилия_Группа_МДК0402_ЛР${expectedSlug}.docx`) errors.push(`${prefix}: неверное рекомендуемое имя файла.`)
@@ -83,6 +80,8 @@ for (const lab of labs) {
   const serialized = JSON.stringify(lab)
   for (const pattern of forbiddenPatterns) if (pattern.test(serialized)) errors.push(`${prefix}: запрещённая формулировка ${pattern}.`)
   if ('course' in lab) errors.push(`${prefix}: запрещено выдуманное поле course.`)
+  if ('rubric' in lab) errors.push(`${prefix}: критерии оценивания должны быть удалены.`)
+  if (/moodle/iu.test(serialized)) errors.push(`${prefix}: обозначение Moodle должно быть заменено на LMS.`)
 }
 
 const totalPoints = labs.reduce((sum, lab) => sum + Number(lab.points || 0), 0)

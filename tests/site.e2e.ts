@@ -23,8 +23,8 @@ test('все 22 прямые ссылки и DOCX доступны', async ({ pa
   for (let number = 1; number <= 22; number += 1) {
     const slug = String(number).padStart(2, '0')
     await page.goto(`./#/lab/${slug}`)
-    await expect(page.getByText(`Лабораторная работа № ${number}`, { exact: true })).toBeVisible()
-    const download = page.getByRole('link', { name: /Скачать шаблон отчёта/ })
+    await expect(page.locator('.lab-hero')).toContainText(`лабораторная работа ${slug}`)
+    const download = page.locator('.lab-action-stack a[download]')
     await expect(download).toHaveAttribute('href', new RegExp(`reports/LR${slug}_template\\.docx$`))
     const response = await request.get(`./reports/LR${slug}_template.docx`)
     expect(response.ok()).toBeTruthy()
@@ -38,14 +38,16 @@ test('изображения загружены и страница не вых�
   expect(overflow).toBeLessThanOrEqual(1)
 })
 
-test('клавиатурный переход и Moodle-инструкция доступны', async ({ page }) => {
+test('клавиатурный переход и ссылка LMS доступны, критериев оценивания нет', async ({ page }) => {
   await page.goto('./#/lab/01')
   await page.keyboard.press('Tab')
   await expect(page.locator('.skip-link')).toBeFocused()
   await page.locator('.skip-link').press('Enter')
   await expect(page.locator('#main-content')).toBeFocused()
   await expect(page.locator('#main-content')).toBeInViewport()
-  await page.getByRole('button', { name: /Сдать работу в Moodle/ }).click()
-  await expect(page.locator('#moodle-submit')).toBeInViewport()
-  await expect(page.locator('#moodle-submit')).toContainText('один файл .docx')
+  const lmsLink = page.locator('.lab-action-stack').getByRole('link', { name: 'Открыть LMS' })
+  await expect(lmsLink).toHaveAttribute('href', 'https://synergy.ru/students')
+  await expect(page.locator('#lms-submit')).toContainText('Один заполненный редактируемый DOCX-файл')
+  await expect(page.getByRole('heading', { name: 'Критерии оценивания' })).toHaveCount(0)
+  await expect(page.locator('body')).not.toContainText(/Moodle/i)
 })
