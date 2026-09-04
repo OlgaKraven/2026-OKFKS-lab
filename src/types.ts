@@ -21,6 +21,32 @@ export interface SourceData {
   sections: DataSection[]
 }
 
+export interface QualityCharacteristic {
+  code: string
+  name: string
+  value: string
+  example: string
+}
+
+export interface QualityProfile {
+  id: number
+  title: string
+  variantRange: string
+  characteristics: QualityCharacteristic[]
+}
+
+export interface SubjectArea {
+  id: number
+  code: string
+  title: string
+  systemCode: string
+  description: string
+  criticalFunction: string
+  assets: string[]
+  profileId: number
+  pack: string
+}
+
 export interface Lab {
   number: number
   slug: string
@@ -30,7 +56,6 @@ export interface Lab {
   semester: 7 | 8
   topicCode: string
   topicTitle: string
-  competencies: string[]
   points: number
   practicalResult: string
   situation: string

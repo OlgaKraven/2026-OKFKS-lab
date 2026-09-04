@@ -291,8 +291,8 @@ def append_report_body(body, lab):
         ["Лабораторная работа", f"№ {lab['number']}. {lab['title']}"],
         ["Блок и семестр", f"Блок {lab['block']}. {lab['blockTitle']} — {lab['semester']} семестр"],
         ["Тема", f"{lab['topicCode']}. {lab['topicTitle']}"],
-        ["Компетенции", ", ".join(lab["competencies"])],
         ["Максимальный балл", str(lab["points"])],
+        ["Предметная область", "[Укажите сквозной вариант SA01–SA30 и название]"],
         ["Имя итогового файла", lab["recommendedFileName"]],
     ]
     insert(make_table(["Поле", "Значение"], metadata_rows, [2100, 6900], font_size=19, first_col_bold=True))

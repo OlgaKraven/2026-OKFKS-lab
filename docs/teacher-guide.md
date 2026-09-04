@@ -13,7 +13,7 @@
 Откройте `src/config.ts` и заполните поле:
 
 ```ts
-lmsUrl: 'https://synergy.ru/students'
+lmsUrl: 'https://lms.synergy.ru/'
 ```
 
 Не добавляйте на сайт формы загрузки: переход к сдаче выполняется по внешней ссылке LMS.

@@ -15,7 +15,6 @@ import {
   Layers3,
   ListChecks,
   Printer,
-  Route,
   Search,
   ShieldCheck,
   Target,
@@ -23,9 +22,33 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 import { courseConfig } from './config'
 import labsPayload from './data/labs.json'
-import type { DataTable, Lab } from './types'
+import subjectAreasPayload from './data/subject-areas.json'
+import type { DataTable, Lab, QualityProfile, SubjectArea } from './types'
 
 const labs = (labsPayload as { labs: Lab[] }).labs
+const { profiles, subjectAreas } = subjectAreasPayload as { profiles: QualityProfile[]; subjectAreas: SubjectArea[] }
+const baseSystems: Partial<Record<number, string>> = {
+  1: 'FS-EDU-01',
+  2: 'PRINT-01',
+  3: 'SCHED-01',
+  4: 'PORTAL-EDU',
+  6: 'JOB-01',
+  7: 'CHECK-API',
+  8: 'PRINT-HUB',
+  9: 'STORAGE-02',
+  10: 'LMS-COLLEGE',
+  21: 'FS2',
+  22: 'CampusBox',
+}
+
+function assetUrl(path: string) {
+  return `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`
+}
+
+function personalizeText(value: string, labNumber: number, subjectArea: SubjectArea) {
+  const baseSystem = baseSystems[labNumber]
+  return baseSystem ? value.replaceAll(baseSystem, subjectArea.systemCode) : value
+}
 
 function useRoute() {
   const readHash = () => window.location.hash || '#/'
@@ -44,6 +67,17 @@ function useRoute() {
 export function App() {
   const route = useRoute()
   const lab = route.kind === 'lab' ? labs.find((item) => item.slug === route.slug) : undefined
+  const [subjectAreaId, setSubjectAreaId] = useState(() => {
+    const saved = Number(window.localStorage.getItem('okfks-subject-area'))
+    return saved >= 1 && saved <= 30 ? saved : 1
+  })
+  const subjectArea = subjectAreas.find((item) => item.id === subjectAreaId) ?? subjectAreas[0]
+  const profile = profiles.find((item) => item.id === subjectArea.profileId) ?? profiles[0]
+
+  const selectSubjectArea = (id: number) => {
+    setSubjectAreaId(id)
+    window.localStorage.setItem('okfks-subject-area', String(id))
+  }
 
   useEffect(() => {
     const skipLink = document.querySelector<HTMLAnchorElement>('.skip-link')
@@ -66,9 +100,9 @@ export function App() {
     window.scrollTo({ top: 0, behavior: 'instant' })
   }, [lab, route.kind])
 
-  if (route.kind === 'lab' && lab) return <LabPage lab={lab} />
+  if (route.kind === 'lab' && lab) return <LabPage lab={lab} subjectArea={subjectArea} profile={profile} onSubjectAreaChange={selectSubjectArea} />
   if (route.kind === 'lab') return <NotFound />
-  return <Home />
+  return <Home subjectArea={subjectArea} profile={profile} onSubjectAreaChange={selectSubjectArea} />
 }
 
 function Brand() {
@@ -83,7 +117,7 @@ function Brand() {
   )
 }
 
-function Home() {
+function Home({ subjectArea, profile, onSubjectAreaChange }: { subjectArea: SubjectArea; profile: QualityProfile; onSubjectAreaChange: (id: number) => void }) {
   const [query, setQuery] = useState('')
   const [semester, setSemester] = useState<'all' | '7' | '8'>('all')
   const [topic, setTopic] = useState('all')
@@ -107,6 +141,7 @@ function Home() {
         <Brand />
         <nav aria-label="Разделы главной страницы">
           <a href="#blocks">Блоки</a>
+          <a href="#variants">Вариант</a>
           <a href="#labs">Работы</a>
           <a href="#lms">LMS</a>
         </nav>
@@ -128,6 +163,8 @@ function Home() {
             <img src={`${import.meta.env.BASE_URL}brand/okfks-rhino.webp`} alt="" />
           </div>
         </section>
+
+        <SubjectAreaPicker value={subjectArea} profile={profile} onChange={onSubjectAreaChange} />
 
         <section className="block-section" id="blocks" aria-labelledby="blocks-title">
           <div className="section-heading">
@@ -190,10 +227,6 @@ function Home() {
         <LmsRules />
       </main>
 
-      <footer className="site-footer">
-        <span>МДК.04.02 · ОК 01 · ПК 4.3 · ПК 4.4</span>
-        <a href={courseConfig.repositoryUrl}>Исходный код <ExternalLink aria-hidden="true" size={15} /></a>
-      </footer>
     </div>
   )
 }
@@ -260,11 +293,13 @@ function LmsRules() {
   )
 }
 
-function LabPage({ lab }: { lab: Lab }) {
+function LabPage({ lab, subjectArea, profile, onSubjectAreaChange }: { lab: Lab; subjectArea: SubjectArea; profile: QualityProfile; onSubjectAreaChange: (id: number) => void }) {
   const previous = labs.find((item) => item.number === lab.number - 1)
   const next = labs.find((item) => item.number === lab.number + 1)
   const reportUrl = `${import.meta.env.BASE_URL}reports/${lab.reportFile}`
+  const packUrl = assetUrl(subjectArea.pack)
   const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  const labText = (value: string) => personalizeText(value, lab.number, subjectArea)
 
   return (
     <div className="lab-shell">
@@ -285,21 +320,16 @@ function LabPage({ lab }: { lab: Lab }) {
                   <p>{lab.practicalResult}</p>
                 </div>
               </div>
-              <div className="lab-action-stack" aria-label="Материалы работы">
-                <a className="button primary" href={reportUrl} download><Download aria-hidden="true" size={18} /> Скачать DOCX</a>
-                <button className="button hero-secondary" type="button" onClick={() => scrollTo('inputs')}><Layers3 aria-hidden="true" size={19} /> Исходные данные <ChevronRight aria-hidden="true" size={17} /></button>
-                <a className="button hero-secondary" href={courseConfig.lmsUrl} target="_blank" rel="noreferrer"><GraduationCap aria-hidden="true" size={20} /> Открыть LMS <ExternalLink aria-hidden="true" size={17} /></a>
-                <button className="button hero-secondary" type="button" onClick={() => window.print()}><Printer aria-hidden="true" size={18} /> Печать страницы</button>
-              </div>
             </div>
           </div>
         </section>
 
         <div className="lab-page-grid">
           <article className="lab-content">
+            <SubjectAreaPicker value={subjectArea} profile={profile} onChange={onSubjectAreaChange} compact />
+
             <ContentSection id="situation" number="01" label="Контекст" title="Рабочая ситуация" icon={<Database aria-hidden="true" />}>
-              <div className="lead-card"><p>{lab.situation}</p></div>
-              <div className="competencies" aria-label="Формируемые компетенции">{lab.competencies.map((item) => <span key={item}>{item}</span>)}</div>
+              <div className="lead-card"><p>{subjectArea.code} · {subjectArea.title}. {labText(lab.situation)}</p></div>
               <div className="choice-callout"><strong>Профессиональный выбор</strong><p>{lab.professionalChoice}</p></div>
             </ContentSection>
 
@@ -310,14 +340,20 @@ function LabPage({ lab }: { lab: Lab }) {
             </ContentSection>
 
             <ContentSection id="inputs" number="03" label="Стартовый пакет" title="Исходные данные" icon={<Layers3 aria-hidden="true" />}>
-              <p>{lab.sourceData.intro}</p>
+              <div className="variant-source-note"><strong>Набор {subjectArea.code}</strong><p>На странице и в ZIP-пакете показаны данные только для «{subjectArea.title}». Системный код: <code>{subjectArea.systemCode}</code>.</p><a className="button secondary" href={packUrl} download><Download aria-hidden="true" size={18} /> Скачать исходный набор</a></div>
+              <p>{labText(lab.sourceData.intro)}</p>
               {lab.sourceData.sections.map((section) => (
                 <div className="data-section" key={section.title}>
-                  <h3>{section.title}</h3>
+                  <h3>{labText(section.title)}</h3>
                   {section.content?.map((item, index) => item.includes('\n')
-                    ? <pre className="source-block" key={`${section.title}-${index}`}><code>{item}</code></pre>
-                    : <p key={`${section.title}-${index}`}>{item}</p>)}
-                  {section.table && <ResponsiveTable data={section.table} />}
+                    ? <pre className="source-block" key={`${section.title}-${index}`}><code>{labText(item)}</code></pre>
+                    : <p key={`${section.title}-${index}`}>{labText(item)}</p>)}
+                  {section.table && <ResponsiveTable data={{
+                    ...section.table,
+                    title: section.table.title ? labText(section.table.title) : undefined,
+                    columns: section.table.columns.map(labText),
+                    rows: section.table.rows.map((row) => row.map((cell) => typeof cell === 'string' ? labText(cell) : cell)),
+                  }} />}
                 </div>
               ))}
               <h3>Инструменты и допустимая среда</h3><Checklist items={lab.tools} compact />
@@ -331,16 +367,20 @@ function LabPage({ lab }: { lab: Lab }) {
               ))}</div>
             </ContentSection>
 
-            <ContentSection id="task" number="05" label="Задание" title="Что нужно сделать" icon={<ListChecks aria-hidden="true" />}>
+            <ContentSection id="example" number="05" label="Пример" title="Пять характеристик варианта" icon={<ShieldCheck aria-hidden="true" />}>
+              <p className="profile-intro">Варианты {profile.variantRange} используют один профиль «{profile.title}». Значения общие для пятёрки, а примеры ниже относятся только к {subjectArea.code}.</p>
+              <div className="characteristic-grid">{profile.characteristics.map((item) => (
+                <article className="characteristic-card" key={item.code}>
+                  <span>{item.code}</span><h3>{item.name}</h3><strong>{item.value}</strong><p>{item.example.replaceAll('{system}', subjectArea.title)}</p>
+                </article>
+              ))}</div>
+            </ContentSection>
+
+            <ContentSection id="task" number="06" label="Задание" title="Что нужно сделать" icon={<ListChecks aria-hidden="true" />}>
               <Checklist items={lab.task} numbered />
             </ContentSection>
 
-            <ContentSection id="route" number="06" label="Действия" title="Маршрут выполнения" icon={<Route aria-hidden="true" />}>
-              <Workflow stages={lab.stages} />
-            </ContentSection>
-
             <ContentSection id="result" number="07" label="Доказательства" title="Что подтвердить" icon={<FileCheck2 aria-hidden="true" />}>
-              <div className="result-banner"><FileText aria-hidden="true" /><div><strong>Практический результат</strong><p>{lab.practicalResult}</p></div></div>
               <div className="two-column">
                 <div><h3>Что должно быть получено</h3><Checklist items={lab.deliverables} /></div>
                 <div><h3>Какие доказательства приложить</h3><Checklist items={lab.evidence} /></div>
@@ -372,18 +412,44 @@ function LabPage({ lab }: { lab: Lab }) {
             <p className="eyebrow">Карточка работы</p>
             <dl>
               <div><dt>ID</dt><dd>МДК0402_ЛР{lab.slug}</dd></div>
+              <div><dt>Вариант</dt><dd>{subjectArea.code} · {subjectArea.title}</dd></div>
               <div><dt>Семестр</dt><dd>{lab.semester}</dd></div>
               <div><dt>Тема</dt><dd>{lab.topicCode}. {lab.topicTitle}</dd></div>
               <div><dt>Учебный блок</dt><dd>{lab.blockTitle}</dd></div>
               <div><dt>Результат</dt><dd>{lab.practicalResult}</dd></div>
             </dl>
-            <a className="button primary" href={reportUrl} download><Download aria-hidden="true" size={18} /> Скачать DOCX</a>
-            <a className="summary-link" href={courseConfig.lmsUrl} target="_blank" rel="noreferrer">Открыть LMS <ExternalLink aria-hidden="true" size={15} /></a>
+            <div className="summary-actions" aria-label="Материалы работы">
+              <a className="button primary" href={reportUrl} download><Download aria-hidden="true" size={18} /> Скачать DOCX</a>
+              <a className="button summary-secondary" href={packUrl} download><Layers3 aria-hidden="true" size={18} /> Набор {subjectArea.code}</a>
+              <button className="button summary-secondary" type="button" onClick={() => scrollTo('inputs')}><Layers3 aria-hidden="true" size={18} /> Исходные данные</button>
+              <a className="button summary-secondary" href={courseConfig.lmsUrl} target="_blank" rel="noreferrer"><GraduationCap aria-hidden="true" size={18} /> Открыть LMS <ExternalLink aria-hidden="true" size={15} /></a>
+              <button className="button summary-secondary" type="button" onClick={() => window.print()}><Printer aria-hidden="true" size={18} /> Печать страницы</button>
+            </div>
             <a className="summary-link" href="#/"><HomeIcon aria-hidden="true" size={15} /> Ко всем работам</a>
           </aside>
         </div>
       </main>
     </div>
+  )
+}
+
+function SubjectAreaPicker({ value, profile, onChange, compact = false }: { value: SubjectArea; profile: QualityProfile; onChange: (id: number) => void; compact?: boolean }) {
+  const titleId = compact ? 'variant-title-lab' : 'variant-title'
+  return (
+    <section className={`variant-picker${compact ? ' compact' : ''}`} id={compact ? undefined : 'variants'} aria-labelledby={titleId}>
+      <div className="variant-picker-copy">
+        <p className="eyebrow">Сквозной вариант · 01–30</p>
+        <h2 id={titleId}>{value.code} · {value.title}</h2>
+        <p>Одна предметная область используется во всех 22 работах. Номер области совпадает с номером варианта.</p>
+      </div>
+      <label className="variant-select"><span>Предметная область</span><select value={value.id} onChange={(event) => onChange(Number(event.target.value))}>{subjectAreas.map((area) => <option key={area.code} value={area.id}>{area.code} · {area.title}</option>)}</select></label>
+      <dl className="variant-facts">
+        <div><dt>Система</dt><dd><code>{value.systemCode}</code></dd></div>
+        <div><dt>Группа</dt><dd>{profile.variantRange} · {profile.title}</dd></div>
+        <div><dt>Критичная функция</dt><dd>{value.criticalFunction}</dd></div>
+      </dl>
+      <a className="button primary variant-download" href={assetUrl(value.pack)} download><Download aria-hidden="true" size={18} /> Скачать ZIP {value.code}</a>
+    </section>
   )
 }
 
@@ -394,10 +460,6 @@ function ContentSection({ id, number, label, title, icon, children }: { id: stri
 function Checklist({ items, compact = false, numbered = false, checkboxes = false }: { items: string[]; compact?: boolean; numbered?: boolean; checkboxes?: boolean }) {
   const Tag = numbered ? 'ol' : 'ul'
   return <Tag className={`checklist ${compact ? 'compact' : ''} ${checkboxes ? 'with-boxes' : ''}`}>{items.map((item) => <li key={item}>{!numbered && !checkboxes && <CheckCircle2 aria-hidden="true" size={18} />}{item}</li>)}</Tag>
-}
-
-function Workflow({ stages }: { stages: string[] }) {
-  return <ol className="workflow">{stages.map((stage, index) => <li key={stage}><span>{index + 1}</span><p>{stage}</p></li>)}</ol>
 }
 
 function ResponsiveTable({ data }: { data: DataTable }) {

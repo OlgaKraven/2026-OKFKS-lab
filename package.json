@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "vite",
+    "generate:subjects": "python scripts/generate_subject_areas.py",
     "validate": "node scripts/validate-content.mjs",
     "typecheck": "tsc -b",
     "lint": "oxlint src scripts tests",
