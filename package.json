@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "vite",
     "generate:subjects": "python scripts/generate_subject_areas.py",
+    "export:lr01": "pnpm run build && node scripts/export_lr01_variants.mjs",
     "validate": "node scripts/validate-content.mjs",
     "typecheck": "tsc -b",
     "lint": "oxlint src scripts tests",
@@ -19,6 +20,7 @@
     "check": "pnpm run lint && pnpm run test && pnpm run build"
   },
   "dependencies": {
+    "fflate": "^0.8.3",
     "lucide-react": "^1.38.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"

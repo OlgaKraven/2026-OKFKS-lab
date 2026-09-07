@@ -6,3 +6,5 @@ test-results/
 *.log
 _qa/
 .tmp/
+output/
+tmp/

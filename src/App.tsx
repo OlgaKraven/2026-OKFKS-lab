@@ -14,7 +14,6 @@ import {
   Home as HomeIcon,
   Layers3,
   ListChecks,
-  Printer,
   Search,
   ShieldCheck,
   Target,
@@ -22,6 +21,8 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 import { courseConfig } from './config'
 import labsPayload from './data/labs.json'
+import { labMethodology, type StepGuide } from './data/methodology'
+import { downloadLabPackage } from './lib/labPackage'
 import subjectAreasPayload from './data/subject-areas.json'
 import type { DataTable, Lab, QualityProfile, SubjectArea } from './types'
 
@@ -47,7 +48,20 @@ function assetUrl(path: string) {
 
 function personalizeText(value: string, labNumber: number, subjectArea: SubjectArea) {
   const baseSystem = baseSystems[labNumber]
-  return baseSystem ? value.replaceAll(baseSystem, subjectArea.systemCode) : value
+  let result = baseSystem ? value.replaceAll(baseSystem, subjectArea.systemCode) : value
+  const escapedCode = subjectArea.systemCode.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const systemPhrases: Array<[string, string]> = [
+    [`учебному файловому серверу ${escapedCode}`, `системе «${subjectArea.title}» (${subjectArea.systemCode})`],
+    [`Сервис печати ${escapedCode}`, `Система «${subjectArea.title}» (${subjectArea.systemCode})`],
+    [`Для сервера электронного расписания ${escapedCode}`, `Для системы «${subjectArea.title}» (${subjectArea.systemCode})`],
+    [`учебный веб-сервис ${escapedCode}`, `система «${subjectArea.title}» (${subjectArea.systemCode})`],
+    [`учебного файлового сервера ${escapedCode}`, `системы «${subjectArea.title}» (${subjectArea.systemCode})`],
+    [`системы ${escapedCode}`, `системы «${subjectArea.title}» (${subjectArea.systemCode})`],
+  ]
+  for (const [phrase, replacement] of systemPhrases) {
+    result = result.replace(new RegExp(phrase, 'giu'), () => replacement)
+  }
+  return result
 }
 
 function useRoute() {
@@ -164,8 +178,6 @@ function Home({ subjectArea, profile, onSubjectAreaChange }: { subjectArea: Subj
           </div>
         </section>
 
-        <SubjectAreaPicker value={subjectArea} profile={profile} onChange={onSubjectAreaChange} />
-
         <section className="block-section" id="blocks" aria-labelledby="blocks-title">
           <div className="section-heading">
             <p className="eyebrow">Структура курса</p>
@@ -177,6 +189,8 @@ function Home({ subjectArea, profile, onSubjectAreaChange }: { subjectArea: Subj
             <BlockCard block={2} title="Защита компьютерных систем" semester={8} count={12} points={50} icon={<ShieldCheck aria-hidden="true" />} />
           </div>
         </section>
+
+        <SubjectAreaPicker value={subjectArea} profile={profile} onChange={onSubjectAreaChange} />
 
         <section className="catalog-section" id="labs" aria-labelledby="labs-title">
           <div className="section-heading catalog-heading">
@@ -251,19 +265,24 @@ function BlockCard({ block, title, semester, count, points, icon }: { block: num
 }
 
 function LabCard({ lab }: { lab: Lab }) {
+  const reportUrl = assetUrl(`reports/${lab.reportFile}`)
   return (
     <article className="lab-card">
       <div className="lab-card-top">
-        <span className="lab-number">ЛР {lab.slug}</span>
-        <span className="points-badge">{lab.points} {pluralizePoints(lab.points)}</span>
+        <span className="lab-number">{courseConfig.code}-ЛР{lab.slug}</span>
+        <span className="lab-meta">{lab.semester} семестр · {lab.points} {pluralizePoints(lab.points)}</span>
       </div>
-      <p className="topic-line">Тема {lab.topicCode} · {lab.semester} семестр</p>
+      <p className="topic-line">Тема {lab.topicCode} · {lab.topicTitle}</p>
       <h3>{lab.title}</h3>
       <div className="result-preview">
-        <FileText aria-hidden="true" size={19} />
-        <p><strong>Практический результат</strong>{lab.practicalResult}</p>
+        <p><strong>Результат</strong>{lab.practicalResult}</p>
       </div>
-      <a className="button secondary" href={`#/lab/${lab.slug}`}>Открыть работу <ArrowRight aria-hidden="true" size={17} /></a>
+      <div className="lab-card-actions">
+        <a className="button primary" href={`#/lab/${lab.slug}`}>Открыть работу <ArrowRight aria-hidden="true" size={17} /></a>
+        <a className="card-download" href={reportUrl} download aria-label={`Скачать шаблон ЛР ${lab.slug}`} title="Скачать шаблон DOCX">
+          <Download aria-hidden="true" size={19} />
+        </a>
+      </div>
     </article>
   )
 }
@@ -294,12 +313,28 @@ function LmsRules() {
 }
 
 function LabPage({ lab, subjectArea, profile, onSubjectAreaChange }: { lab: Lab; subjectArea: SubjectArea; profile: QualityProfile; onSubjectAreaChange: (id: number) => void }) {
+  const [packageStatus, setPackageStatus] = useState<'idle' | 'preparing' | 'error'>('idle')
   const previous = labs.find((item) => item.number === lab.number - 1)
   const next = labs.find((item) => item.number === lab.number + 1)
   const reportUrl = `${import.meta.env.BASE_URL}reports/${lab.reportFile}`
   const packUrl = assetUrl(subjectArea.pack)
-  const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   const labText = (value: string) => personalizeText(value, lab.number, subjectArea)
+  const methodology = labMethodology[lab.number]
+  const preparePackage = async () => {
+    setPackageStatus('preparing')
+    try {
+      await downloadLabPackage({
+        labSlug: lab.slug,
+        subjectCode: subjectArea.code,
+        title: `ЛР ${lab.slug}. ${lab.title} · ${subjectArea.code}`,
+        reportUrl,
+        subjectPackUrl: packUrl,
+      })
+      setPackageStatus('idle')
+    } catch {
+      setPackageStatus('error')
+    }
+  }
 
   return (
     <div className="lab-shell">
@@ -330,16 +365,29 @@ function LabPage({ lab, subjectArea, profile, onSubjectAreaChange }: { lab: Lab;
 
             <ContentSection id="situation" number="01" label="Контекст" title="Рабочая ситуация" icon={<Database aria-hidden="true" />}>
               <div className="lead-card"><p>{subjectArea.code} · {subjectArea.title}. {labText(lab.situation)}</p></div>
-              <div className="choice-callout"><strong>Профессиональный выбор</strong><p>{lab.professionalChoice}</p></div>
+              <div className="choice-callout"><strong>Профессиональный выбор</strong><p>{labText(lab.professionalChoice)}</p></div>
             </ContentSection>
 
             <ContentSection id="goal" number="02" label="Результат обучения" title="Цель и формируемые умения" icon={<Target aria-hidden="true" />}>
-              <p><strong>Цель.</strong> {lab.goal}</p>
+              <p><strong>Цель.</strong> {labText(lab.goal)}</p>
               <h3>После выполнения вы сможете</h3>
-              <Checklist items={lab.outcomes} />
+              <Checklist items={lab.outcomes.map(labText)} />
             </ContentSection>
 
-            <ContentSection id="inputs" number="03" label="Стартовый пакет" title="Исходные данные" icon={<Layers3 aria-hidden="true" />}>
+            <ContentSection id="sequence" number="03" label="Связь работ" title="Место работы в последовательности" icon={<ArrowRight aria-hidden="true" />}>
+              <div className="sequence-grid">
+                <article><span>Используется на входе</span><p>{methodology.sequence.previous}</p></article>
+                <article><span>Передаётся дальше</span><p>{methodology.sequence.next}</p></article>
+              </div>
+              <h3>Материалы текущей работы</h3>
+              <Checklist items={[
+                `ZIP-набор ${subjectArea.code} с паспортом системы, пятью характеристиками профиля и исходными файлами ЛР ${lab.slug}`,
+                `таблицы, правила, ограничения и идентификаторы из раздела «Исходные данные»`,
+                `редактируемый шаблон ${lab.reportFile}`,
+              ]} />
+            </ContentSection>
+
+            <ContentSection id="inputs" number="04" label="Стартовый пакет" title="Исходные данные" icon={<Layers3 aria-hidden="true" />}>
               <div className="variant-source-note"><strong>Набор {subjectArea.code}</strong><p>На странице и в ZIP-пакете показаны данные только для «{subjectArea.title}». Системный код: <code>{subjectArea.systemCode}</code>.</p><a className="button secondary" href={packUrl} download><Download aria-hidden="true" size={18} /> Скачать исходный набор</a></div>
               <p>{labText(lab.sourceData.intro)}</p>
               {lab.sourceData.sections.map((section) => (
@@ -356,18 +404,28 @@ function LabPage({ lab, subjectArea, profile, onSubjectAreaChange }: { lab: Lab;
                   }} />}
                 </div>
               ))}
-              <h3>Инструменты и допустимая среда</h3><Checklist items={lab.tools} compact />
+              <h3>Инструменты и допустимая среда</h3><Checklist items={lab.tools.map(labText)} compact />
             </ContentSection>
 
-            <ContentSection id="theory" number="04" label="Теория" title="Краткая опора" icon={<BookOpen aria-hidden="true" />}>
+            <ContentSection id="theory" number="05" label="Теория" title="Краткая опора" icon={<BookOpen aria-hidden="true" />}>
               <div className="theory-grid">{lab.theoryCards.map((card) => (
                 <article className="theory-card" key={`${card.label}-${card.title}`}>
-                  <span>{card.label}</span><h3>{card.title}</h3><p>{card.text}</p>
+                  <span>{labText(card.label)}</span><h3>{labText(card.title)}</h3><p>{labText(card.text)}</p>
                 </article>
               ))}</div>
             </ContentSection>
 
-            <ContentSection id="example" number="05" label="Пример" title="Пять характеристик варианта" icon={<ShieldCheck aria-hidden="true" />}>
+            <ContentSection id="example" number="06" label="Разобранный пример" title={methodology.example.title} icon={<BookOpen aria-hidden="true" />}>
+              <div className="worked-example">
+                <p><strong>Условие.</strong> {methodology.example.source}</p>
+                <h3>Ход решения</h3>
+                <Checklist items={methodology.example.method} numbered />
+                <p><strong>Проверяемый результат.</strong> {methodology.example.result}</p>
+                <p className="example-boundary"><strong>Граница примера.</strong> {methodology.example.boundary}</p>
+              </div>
+            </ContentSection>
+
+            <ContentSection id="profile" number="07" label="Параметры варианта" title="Пять характеристик варианта" icon={<ShieldCheck aria-hidden="true" />}>
               <p className="profile-intro">Варианты {profile.variantRange} используют один профиль «{profile.title}». Значения общие для пятёрки, а примеры ниже относятся только к {subjectArea.code}.</p>
               <div className="characteristic-grid">{profile.characteristics.map((item) => (
                 <article className="characteristic-card" key={item.code}>
@@ -376,23 +434,21 @@ function LabPage({ lab, subjectArea, profile, onSubjectAreaChange }: { lab: Lab;
               ))}</div>
             </ContentSection>
 
-            <ContentSection id="task" number="06" label="Задание" title="Что нужно сделать" icon={<ListChecks aria-hidden="true" />}>
-              <Checklist items={lab.task} numbered />
+            <ContentSection id="task" number="08" label="Задание" title="Последовательность действий" icon={<ListChecks aria-hidden="true" />}>
+              <p className="task-scope"><strong>Все действия обязательны.</strong> Дополнительные задания в этой работе не предусмотрены.</p>
+              <TaskProtocol actions={lab.task.map(labText)} guides={methodology.steps} subjectArea={subjectArea} />
             </ContentSection>
 
-            <ContentSection id="result" number="07" label="Доказательства" title="Что подтвердить" icon={<FileCheck2 aria-hidden="true" />}>
-              <div className="two-column">
-                <div><h3>Что должно быть получено</h3><Checklist items={lab.deliverables} /></div>
-                <div><h3>Какие доказательства приложить</h3><Checklist items={lab.evidence} /></div>
-              </div>
+            <ContentSection id="result" number="09" label="Результат" title="Что должно быть получено" icon={<FileCheck2 aria-hidden="true" />}>
+              <Checklist items={lab.deliverables.map(labText)} />
             </ContentSection>
 
-            <ContentSection id="self-check" number="08" label="Перед отправкой" title="Самопроверка" icon={<ClipboardCheck aria-hidden="true" />}>
-              <Checklist items={lab.selfCheck} checkboxes />
-              <h3>Требования к Word-файлу</h3><Checklist items={lab.wordRequirements} />
+            <ContentSection id="self-check" number="10" label="Перед отправкой" title="Самопроверка" icon={<ClipboardCheck aria-hidden="true" />}>
+              <Checklist items={lab.selfCheck.map(labText)} checkboxes />
+              <h3>Требования к Word-файлу</h3><Checklist items={lab.wordRequirements.map(labText)} />
             </ContentSection>
 
-            <ContentSection id="lms-submit" number="09" label="Отчёт и LMS" title="Что сдаётся" icon={<GraduationCap aria-hidden="true" />}>
+            <ContentSection id="lms-submit" number="11" label="Отчёт и LMS" title="Требования к отчёту и сдаче" icon={<GraduationCap aria-hidden="true" />}>
               <p><strong>Один заполненный редактируемый DOCX-файл.</strong></p>
               <p className="filename"><strong>Рекомендуемое имя:</strong> <code>{lab.recommendedFileName}</code></p>
               <ol className="lms-steps">{lab.lmsSteps.map((step) => <li key={step}>{step}</li>)}</ol>
@@ -411,25 +467,41 @@ function LabPage({ lab, subjectArea, profile, onSubjectAreaChange }: { lab: Lab;
           <aside className="lab-summary" aria-label="Краткая карточка работы">
             <p className="eyebrow">Карточка работы</p>
             <dl>
-              <div><dt>ID</dt><dd>МДК0402_ЛР{lab.slug}</dd></div>
-              <div><dt>Вариант</dt><dd>{subjectArea.code} · {subjectArea.title}</dd></div>
-              <div><dt>Семестр</dt><dd>{lab.semester}</dd></div>
-              <div><dt>Тема</dt><dd>{lab.topicCode}. {lab.topicTitle}</dd></div>
-              <div><dt>Учебный блок</dt><dd>{lab.blockTitle}</dd></div>
+              <div><dt>ID</dt><dd>{courseConfig.code}-ЛР{lab.slug}</dd></div>
               <div><dt>Результат</dt><dd>{lab.practicalResult}</dd></div>
+              <div><dt>Учебный блок</dt><dd>{lab.blockTitle}</dd></div>
             </dl>
-            <div className="summary-actions" aria-label="Материалы работы">
-              <a className="button primary" href={reportUrl} download><Download aria-hidden="true" size={18} /> Скачать DOCX</a>
-              <a className="button summary-secondary" href={packUrl} download><Layers3 aria-hidden="true" size={18} /> Набор {subjectArea.code}</a>
-              <button className="button summary-secondary" type="button" onClick={() => scrollTo('inputs')}><Layers3 aria-hidden="true" size={18} /> Исходные данные</button>
-              <a className="button summary-secondary" href={courseConfig.lmsUrl} target="_blank" rel="noreferrer"><GraduationCap aria-hidden="true" size={18} /> Открыть LMS <ExternalLink aria-hidden="true" size={15} /></a>
-              <button className="button summary-secondary" type="button" onClick={() => window.print()}><Printer aria-hidden="true" size={18} /> Печать страницы</button>
+            <div className="summary-actions" aria-label="Шаблон работы">
+              <button className="button primary" type="button" disabled={packageStatus === 'preparing'} onClick={preparePackage}>
+                <Download aria-hidden="true" size={18} /> {packageStatus === 'preparing' ? 'Подготовка…' : packageStatus === 'error' ? 'Повторить скачивание' : 'Скачать шаблон'}
+              </button>
             </div>
+            {packageStatus === 'error' && <p className="package-error" role="status">Не удалось подготовить комплект. Проверьте соединение и повторите скачивание.</p>}
             <a className="summary-link" href="#/"><HomeIcon aria-hidden="true" size={15} /> Ко всем работам</a>
           </aside>
         </div>
       </main>
     </div>
+  )
+}
+
+function TaskProtocol({ actions, guides, subjectArea }: { actions: string[]; guides: StepGuide[]; subjectArea: SubjectArea }) {
+  return (
+    <ol className="task-protocol">
+      {actions.map((action, index) => {
+        const guide = guides[index]
+        return (
+          <li key={action}>
+            <h3>{action}</h3>
+            <dl>
+              <div><dt>Исходные данные</dt><dd>Набор {subjectArea.code}. {guide.data}</dd></div>
+              <div><dt>Результат шага</dt><dd>{guide.result}</dd></div>
+              <div><dt>Проверка</dt><dd>{guide.check}</dd></div>
+            </dl>
+          </li>
+        )
+      })}
+    </ol>
   )
 }
 
@@ -454,7 +526,8 @@ function SubjectAreaPicker({ value, profile, onChange, compact = false }: { valu
 }
 
 function ContentSection({ id, number, label, title, icon, children }: { id: string; number: string; label: string; title: string; icon: React.ReactNode; children: React.ReactNode }) {
-  return <section className="content-section" id={id}><header className="content-section-heading"><span className="section-icon">{icon}</span><div><p className="eyebrow">{number} · {label}</p><h2>{title}</h2></div></header><div className="content-section-body">{children}</div></section>
+  const titleClassName = title.length > 24 ? 'content-section-title is-long' : 'content-section-title'
+  return <section className="content-section" id={id}><header className="content-section-heading"><span className="section-icon">{icon}</span><div><p className="eyebrow">{number} · {label}</p><h2 className={titleClassName}>{title}</h2></div></header><div className="content-section-body">{children}</div></section>
 }
 
 function Checklist({ items, compact = false, numbered = false, checkboxes = false }: { items: string[]; compact?: boolean; numbered?: boolean; checkboxes?: boolean }) {

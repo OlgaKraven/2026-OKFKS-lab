@@ -75,6 +75,7 @@ for (const lab of labs) {
     const values = (lab[key] ?? []).map(normalize)
     if (new Set(values).size !== values.length) errors.push(`${prefix}: повторы в блоке ${key}.`)
   }
+  if ((lab.selfCheck ?? []).some((item) => /\?/u.test(item))) errors.push(`${prefix}: самопроверка должна состоять из утверждений, а не вопросов.`)
   const taskValues = new Set((lab.task ?? []).map(normalize))
   if ((lab.stages ?? []).some((item) => taskValues.has(normalize(item)))) errors.push(`${prefix}: этап дословно дублирует задание.`)
   if (!lab.sourceData?.intro?.trim() || !Array.isArray(lab.sourceData.sections) || !lab.sourceData.sections.length) errors.push(`${prefix}: недостаточно исходных данных.`)

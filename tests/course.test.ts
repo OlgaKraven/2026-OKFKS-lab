@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import payload from '../src/data/labs.json'
+import { labMethodology } from '../src/data/methodology'
 import subjectPayload from '../src/data/subject-areas.json'
 
 describe('карта лабораторных работ', () => {
@@ -24,6 +25,24 @@ describe('карта лабораторных работ', () => {
     for (const profile of subjectPayload.profiles) {
       expect(profile.characteristics).toHaveLength(5)
       expect(subjectPayload.subjectAreas.filter((area) => area.profileId === profile.id)).toHaveLength(5)
+    }
+  })
+
+  it('содержит методическую связку, разобранный пример и критерии каждого шага', () => {
+    for (const lab of payload.labs) {
+      const methodology = labMethodology[lab.number]
+      expect(methodology).toBeDefined()
+      expect(methodology.sequence.previous).toBeTruthy()
+      expect(methodology.sequence.next).toBeTruthy()
+      expect(methodology.example.method.length).toBeGreaterThanOrEqual(3)
+      expect(methodology.example.boundary).toBeTruthy()
+      expect(methodology.steps).toHaveLength(lab.task.length)
+      for (const step of methodology.steps) {
+        expect(step.data).toBeTruthy()
+        expect(step.result).toBeTruthy()
+        expect(step.check).toBeTruthy()
+      }
+      expect(lab.selfCheck.every((item) => !item.includes('?'))).toBe(true)
     }
   })
 })
