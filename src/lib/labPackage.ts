@@ -1,70 +1,38 @@
-import { strToU8, unzipSync, zipSync } from 'fflate'
-
-const fetchBytes = async (url: string) => {
-  const response = await fetch(url)
-  if (!response.ok) throw new Error(`Не удалось загрузить файл комплекта: ${response.status}`)
-  return new Uint8Array(await response.arrayBuffer())
+import {strToU8,strFromU8,unzipSync,zipSync} from 'fflate'
+import type {Lab,SubjectArea,QualityProfile} from '../types'
+import {personalizeText} from './personalize'
+import css from '../styles.css?inline'
+import extraCss from '../template.css?inline'
+const byteCache=new Map<string,Promise<Uint8Array>>()
+const fetchBytes=(path:string)=>{let pending=byteCache.get(path);if(!pending){pending=(async()=>{const r=await fetch(import.meta.env.BASE_URL+path);if(!r.ok)throw Error(`Не найден файл ${path}`);return new Uint8Array(await r.arrayBuffer())})();byteCache.set(path,pending);pending.catch(()=>byteCache.delete(path))}return pending}
+const xmlEscape=(s:string)=>s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
+function personalizeReport(bytes:Uint8Array,area:SubjectArea){const entries=unzipSync(bytes);const key='word/document.xml';entries[key]=strToU8(strFromU8(entries[key]).replaceAll('[код]',xmlEscape(area.code)).replaceAll('[название]',xmlEscape(area.title)));return zipSync(entries,{level:6})}
+const csv=(rows:(string|number)[][])=>'\uFEFF'+rows.map(row=>row.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(';')).join('\r\n')
+async function buildFiles({labs,area,profile,renderPage}:{labs:Lab[];area:SubjectArea;profile:QualityProfile;renderPage:(lab:Lab)=>string}){
+ if(!labs.length)throw Error('Нет работ в комплекте')
+ const files:Record<string,Uint8Array>={};const font=await fetchBytes('fonts/raleway-cyrillic.woff2');
+ files['assets/raleway.woff2']=font;files['assets/styles.css']=strToU8(css.replace(/url\([^)]*raleway[^)]*\)/g,"url('raleway.woff2')")+'\n'+extraCss+'\n.course-controls,.lab-summary,.lab-pager{display:none}.lab-page-grid{grid-template-columns:1fr}.variant-picker.compact{position:static}.lab-hero{display:block}');
+ for(const lab of labs){const dir=`${area.code}/LR${lab.slug}/`;const text=(s:string)=>personalizeText(s,lab.number,area);files[dir+'Шаблон_для_заполнения.docx']=personalizeReport(await fetchBytes('reports/'+lab.reportFile),area);
+ const doc=new DOMParser().parseFromString(renderPage(lab),'text/html');doc.querySelectorAll('select').forEach(select=>{const span=doc.createElement('strong');span.textContent=select.selectedOptions[0]?.textContent||`${area.code} · ${area.title}`;select.replaceWith(span)});doc.querySelectorAll('button,.lab-summary,.lab-pager,.submission-actions').forEach(el=>el.remove());doc.querySelectorAll('a').forEach(el=>{if(el.getAttribute('href')?.startsWith('#/'))el.remove()});
+ const heading=doc.createElement('p');heading.className='offline-package-label';heading.textContent=`ЛР ${lab.slug} · Вариант ${area.code} · ${area.title}. Шаблон и данные находятся в этой папке.`;doc.body.prepend(heading);
+ files[dir+'Задание.html']=strToU8(`<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ЛР ${lab.slug} · ${area.code}</title><link rel="stylesheet" href="../../assets/styles.css"></head><body>${doc.body.innerHTML}</body></html>`);
+ let md=`# ЛР ${lab.slug}: ${lab.title}\n\nВариант ${area.code}: ${area.title}\n\n## Пояснение к задаче по предметной области\n${area.description}\n\n${text(lab.sourceData.intro)}\n\n`;for(const [i,section] of lab.sourceData.sections.entries()){md+=`## ${text(section.title)}\n\n${(section.content||[]).map(text).join('\n\n')}\n\n`;if(section.table){const rows=[section.table.columns,...section.table.rows].map(row=>row.map(x=>typeof x==='string'?text(x):x));const name=`Данные_${String(i+1).padStart(2,'0')}.csv`;files[dir+'Данные/'+name]=strToU8(csv(rows));md+=`Таблица: ${name}\n\n`}}
+ files[dir+'Данные/Пояснение.md']=strToU8(md);files[dir+'Данные/Условия_варианта.csv']=strToU8(csv([['Вариант','Область','Система','Условие','Значение','Пример'],...profile.characteristics.map(x=>[area.code,area.title,area.systemCode,x.name,x.value,x.example.replaceAll('{system}',area.title)])]));
+ files[dir+'Начните_здесь.md']=strToU8(`# ЛР ${lab.slug} · ${area.code}\n\n1. Откройте Задание.html в браузере без подключения к интернету.\n2. Используйте только файлы папки Данные этой работы. CSV: UTF-8, разделитель — точка с запятой.\n3. Заполните Шаблон_для_заполнения.docx. Укажите вариант ${area.code}, ФИО и группу.\n4. Сохраните результат: он пригодится в следующих работах.\n\nВсе значения — учебные.\n`);
+ }
+ files['Состав_комплекта.md']=strToU8(`# Комплект варианта ${area.code} — ${area.title}\n\n${labs.map(l=>`- ЛР ${l.slug}: ${l.title} (${l.semester} семестр)`).join('\n')}\n\nРаспакуйте весь архив, чтобы сохранить оформление HTML. Каждая папка ЛР содержит только материалы соответствующей работы.\n`);
+ files['manifest.json']=strToU8(JSON.stringify({schemaVersion:1,variant:area.code,labs:labs.map(l=>({id:l.slug,semester:l.semester})),files:Object.keys(files)},null,2));
+ return files
 }
-
-const standalonePage = async (title: string) => {
-  const shell = document.querySelector<HTMLElement>('.lab-shell')?.cloneNode(true) as HTMLElement | undefined
-  if (!shell) throw new Error('Страница лабораторной работы не найдена')
-
-  shell.querySelector('.lab-hero')?.remove()
-  shell.querySelectorAll('button, .summary-actions, .summary-link').forEach((element) => element.remove())
-  shell.querySelectorAll('select').forEach((select) => {
-    const current = select as HTMLSelectElement
-    const value = document.createElement('strong')
-    value.textContent = current.selectedOptions[0]?.textContent || current.value
-    current.replaceWith(value)
-  })
-
-  const cssLinks = Array.from(document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]'))
-  const css = (await Promise.all(cssLinks.map(async (link) => {
-    const response = await fetch(link.href)
-    return response.ok ? response.text() : ''
-  }))).join('\n')
-
-  return `<!doctype html><html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title><style>${css}\nbody{background:#fff}.lab-page-grid{grid-template-columns:1fr;padding-top:2rem}.lab-summary{display:none}.variant-picker.compact{position:static}</style></head><body>${shell.outerHTML}</body></html>`
-}
-
-export async function downloadLabPackage({
-  labSlug,
-  subjectCode,
-  title,
-  reportUrl,
-  subjectPackUrl,
-}: {
-  labSlug: string
-  subjectCode: string
-  title: string
-  reportUrl: string
-  subjectPackUrl: string
-}) {
-  const [report, subjectPack, page] = await Promise.all([
-    fetchBytes(reportUrl),
-    fetchBytes(subjectPackUrl),
-    standalonePage(title),
-  ])
-  const subjectEntries = unzipSync(subjectPack)
-  const requiredSuffixes = ['system-passport.csv', 'quality-characteristics.csv', `labs/LR${labSlug}.md`]
-  const packageEntries: Record<string, Uint8Array> = {
-    [`ЛР${labSlug}_${subjectCode}.html`]: strToU8(page),
-    [`LR${labSlug}_template.docx`]: report,
-  }
-
-  Object.entries(subjectEntries).forEach(([name, bytes]) => {
-    if (!requiredSuffixes.some((suffix) => name.endsWith(suffix))) return
-    packageEntries[`Исходные_данные/${name.split('/').pop()}`] = bytes
-  })
-
-  const archive = zipSync(packageEntries, { level: 6 })
-  const href = URL.createObjectURL(new Blob([archive], { type: 'application/zip' }))
-  const link = document.createElement('a')
-  link.href = href
-  link.download = `${subjectCode}_ЛР${labSlug}_комплект.zip`
-  document.body.append(link)
-  link.click()
-  link.remove()
-  window.setTimeout(() => URL.revokeObjectURL(href), 1000)
+type BundleInput=Parameters<typeof buildFiles>[0]
+function saveZip(files:Record<string,Uint8Array>,name:string){const zip=zipSync(files,{level:6});const href=URL.createObjectURL(new Blob([zip],{type:'application/zip'}));const a=document.createElement('a');a.href=href;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(href),10000)}
+export async function downloadBundle(input:BundleInput){const {area,labs}=input;saveZip(await buildFiles(input),`${area.code}_${labs.length===1?'ЛР'+labs[0].slug:new Set(labs.map(l=>l.semester)).size===1?'семестр_'+labs[0].semester:'все_работы'}.zip`)}
+export async function downloadAllVariants(inputs:BundleInput[]){
+ if(!inputs.length)throw Error('Нет вариантов')
+ const files:Record<string,Uint8Array>={}
+ for(const input of inputs){const variantFiles=await buildFiles(input);for(const [path,bytes] of Object.entries(variantFiles)){if(path==='manifest.json'||path==='Состав_комплекта.md')files[`${input.area.code}/${path}`]=bytes;else files[path]=bytes}}
+ const labs=inputs[0].labs
+ files['Состав_комплекта.md']=strToU8(`# Комплект преподавателя — все варианты\n\n${inputs.map(i=>`- ${i.area.code}: ${i.area.title}`).join('\n')}\n\n${labs.map(l=>`- ЛР ${l.slug} (${l.semester} семестр)`).join('\n')}\n\nРаспакуйте архив полностью. Сохраните общую папку assets рядом с папками вариантов.\n`)
+ files['manifest.json']=strToU8(JSON.stringify({schemaVersion:1,scope:'all-variants',variants:inputs.map(i=>i.area.code),labs:labs.map(l=>({id:l.slug,semester:l.semester})),files:Object.keys(files)},null,2))
+ saveZip(files,`Все_варианты_${new Set(labs.map(l=>l.semester)).size===1?'семестр_'+labs[0].semester:'все_семестры'}.zip`)
 }

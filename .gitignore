@@ -8,3 +8,6 @@ _qa/
 .tmp/
 output/
 tmp/
+
+.playwright-cli/
+work/

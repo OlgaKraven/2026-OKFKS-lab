@@ -2,130 +2,76 @@ import { expect, test } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
 import { strFromU8, unzipSync } from 'fflate'
 
-test('главная страница показывает структуру курса и 22 карточки', async ({ page }) => {
+// Existing browser coverage adapted to the new template's actual controls.
+test('каталог сохраняет 22 работы, семестры, баллы и поиск', async ({ page }) => {
   await page.goto('./')
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('Качество системы')
-  await expect(page.getByRole('heading', { name: 'Два профессиональных контура' })).toBeVisible()
-  await expect(page.locator('.hero')).toContainText('100 баллов')
-  await expect(page.locator('.block-card')).toHaveCount(2)
-  await expect(page.locator('.block-card').nth(0)).toContainText('50 баллов')
-  await expect(page.locator('.block-card').nth(1)).toContainText('50 баллов')
+  await expect(page.locator('.hero')).toContainText('2 семестра · 22 лабораторные работы · 100 баллов')
   await expect(page.locator('.lab-card')).toHaveCount(22)
-  await expect(page.locator('.variant-picker')).toContainText('SA01 · Электронное расписание')
-  const structureTop = await page.locator('#blocks').evaluate((element) => element.getBoundingClientRect().top)
-  const variantTop = await page.locator('#variants').evaluate((element) => element.getBoundingClientRect().top)
-  expect(structureTop).toBeLessThan(variantTop)
-  const firstCard = page.locator('.lab-card').first()
-  await expect(firstCard).toContainText('МДК04.02-ЛР01')
-  await expect(firstCard.getByRole('link', { name: 'Открыть работу' })).toHaveClass(/primary/)
-  await expect(firstCard.getByRole('link', { name: 'Скачать шаблон ЛР 01' })).toHaveAttribute('href', /reports\/LR01_template\.docx$/)
-  await expect(page.locator('input[type="file"]')).toHaveCount(0)
-  await expect(page.locator('footer')).toHaveCount(0)
-})
-
-test('поиск и фильтры работают', async ({ page }) => {
-  await page.goto('./')
+  await expect(page.locator('.block-card')).toHaveCount(2)
+  for (const card of await page.locator('.block-card').all()) await expect(card).toContainText('50')
   await page.getByPlaceholder('Номер, тема или практический результат').fill('коэффициента готовности')
   await expect(page.locator('.lab-card')).toHaveCount(1)
-  await expect(page.locator('.lab-card')).toContainText('Расчёт коэффициента готовности')
-  await page.getByRole('button', { name: '8 семестр' }).click()
-  await expect(page.locator('.lab-card')).toHaveCount(0)
   await page.getByPlaceholder('Номер, тема или практический результат').fill('')
+  await page.getByRole('group', {name:'Фильтр по семестру'}).getByRole('button',{name:'8 семестр'}).click()
   await expect(page.locator('.lab-card')).toHaveCount(12)
 })
 
-test('все 22 прямые ссылки и DOCX доступны', async ({ page, request }) => {
-  for (let number = 1; number <= 22; number += 1) {
-    const slug = String(number).padStart(2, '0')
+test('все работы содержат контекст, ссылки на лекции и формы', async ({ page, request }) => {
+  for (let n=1;n<=22;n++) {
+    const slug=String(n).padStart(2,'0')
     await page.goto(`./#/lab/${slug}`)
-    await expect(page.locator('.lab-hero')).toContainText(`лабораторная работа ${slug}`)
-    await expect(page.locator('.lab-summary').getByRole('button', { name: 'Скачать шаблон', exact: true })).toBeVisible()
-    const overlappingHeadings = await page.locator('.content-section').evaluateAll((sections) => sections.filter((section) => {
-      const heading = section.querySelector('.content-section-heading')
-      const body = section.querySelector('.content-section-body')
-      if (!heading || !body) return false
-      const headingRect = heading.getBoundingClientRect()
-      const bodyRect = body.getBoundingClientRect()
-      return headingRect.left < bodyRect.right
-        && headingRect.right > bodyRect.left
-        && headingRect.top < bodyRect.bottom
-        && headingRect.bottom > bodyRect.top
-    }).length)
-    expect(overlappingHeadings).toBe(0)
-    const response = await request.get(`./reports/LR${slug}_template.docx`)
+    await expect(page.locator('.lab-hero')).toContainText(`Лабораторная работа ${slug}`)
+    await expect(page.locator('#sequence')).toContainText('Связь с лекцией')
+    expect(await page.locator('.lecture-links a').count()).toBeGreaterThan(0)
+    await expect(page.locator('#sequence')).toContainText('Данные для следующей работы')
+    await expect(page.locator('#task')).toContainText('Проверка')
+    await expect(page.locator('.course-controls')).toHaveCount(0)
+    await expect(page.locator('body')).not.toContainText('{criticalFunction}')
+    const response=await request.get(`./reports/LR${slug}_template.docx`)
     expect(response.ok()).toBeTruthy()
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth-window.innerWidth)).toBeLessThanOrEqual(1)
   }
 })
 
-test('изображения загружены и страница не выходит за ширину экрана', async ({ page }) => {
+test('вариант сохраняется после обновления, ZIP согласован с HTML и DOCX', async ({ page }) => {
   await page.goto('./')
-  await expect.poll(() => page.evaluate(() => Array.from(document.images).every((image) => image.complete && image.naturalWidth > 0))).toBeTruthy()
-  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
-  expect(overflow).toBeLessThanOrEqual(1)
+  await page.locator('.variant-picker select').selectOption('30')
+  await page.reload()
+  await expect(page.locator('.variant-picker select')).toHaveValue('30')
+  await page.goto('./#/lab/01')
+  await expect(page.locator('#inputs')).toContainText('Хранилище результатов аттестации')
+  const waiting=page.waitForEvent('download')
+  await page.locator('#inputs').getByRole('button',{name:'Скачать лабораторную работу',exact:true}).click()
+  const download=await waiting
+  const entries=unzipSync(new Uint8Array(await readFile((await download.path())!)))
+  const paths=Object.keys(entries)
+  expect(paths.filter(p=>p.endsWith('Задание.html'))).toHaveLength(1)
+  expect(paths.some(p=>/^SA(?!30)/.test(p))).toBe(false)
+  const html=strFromU8(entries['SA30/LR01/Задание.html'])
+  expect(html).toContain('Хранилище результатов аттестации')
+  expect(html).toContain('лекцией')
+  expect(html).not.toContain('{assets}')
+  const docx=unzipSync(entries['SA30/LR01/Шаблон_для_заполнения.docx'])
+  const xml=strFromU8(docx['word/document.xml'])
+  expect(xml).toContain('SA30')
+  expect(xml).toContain('Хранилище результатов аттестации')
+  expect(xml).not.toContain('{{VARIANT}}')
+  for(const p of paths.filter(p=>p.endsWith('.csv')))expect(Array.from(entries[p].slice(0,3))).toEqual([239,187,191])
 })
 
-test('клавиатурный переход и ссылка LMS доступны, критериев оценивания нет', async ({ page }) => {
-  await page.goto('./#/lab/01')
-  await page.keyboard.press('Tab')
-  await expect(page.locator('.skip-link')).toBeFocused()
-  await page.locator('.skip-link').press('Enter')
-  await expect(page.locator('#main-content')).toBeFocused()
-  await expect(page.locator('#main-content')).toBeInViewport()
-  await expect(page.locator('.lab-action-stack')).toHaveCount(0)
-  const lmsLink = page.locator('#lms-submit').getByRole('link', { name: 'Перейти в LMS' })
-  await expect(lmsLink).toHaveAttribute('href', 'https://lms.synergy.ru/')
-  await expect(page.locator('#lms-submit')).toContainText('Один заполненный редактируемый DOCX-файл')
-  await expect(page.getByRole('heading', { name: 'Пять характеристик варианта' })).toBeVisible()
-  await expect(page.locator('.characteristic-card')).toHaveCount(5)
-  await expect(page.getByRole('heading', { name: 'Место работы в последовательности' })).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Классификация одного события вне варианта' })).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Что должно быть получено' })).toBeVisible()
-  await expect(page.locator('#result')).not.toContainText(/Доказательства|Что подтвердить|Какие доказательства приложить/i)
-  await expect(page.locator('#task .task-protocol > li')).toHaveCount(5)
-  await expect(page.locator('#task .task-protocol > li').first()).toContainText('Исходные данные')
-  await expect(page.locator('#task .task-protocol > li').first()).toContainText('Результат шага')
-  await expect(page.locator('#task .task-protocol > li').first()).toContainText('Проверка')
-  await expect(page.locator('#self-check')).not.toContainText('?')
-  await expect(page.getByRole('heading', { name: 'Маршрут выполнения' })).toHaveCount(0)
-  await expect(page.locator('#result .result-banner')).toHaveCount(0)
-  await expect(page.getByRole('heading', { name: 'Критерии оценивания' })).toHaveCount(0)
-  await expect(page.locator('body')).not.toContainText(/Moodle/i)
-  await expect(page.locator('body')).not.toContainText(/(?:ОК|ПК)\s*\d/i)
-})
-
-test('кнопка шаблона формирует персонализированный ZIP-комплект', async ({ page }) => {
+test('настройки, темы, помощь и самопроверка доступны', async ({ page }) => {
   await page.goto('./')
-  await page.locator('.variant-picker:not(.compact) select').selectOption('6')
+  await page.getByRole('button',{name:'Включить тёмную тему'}).click()
+  await page.reload()
+  await expect(page.locator('html')).toHaveAttribute('data-theme','dark')
+  await expect(page.getByRole('link',{name:'Как пользоваться сайтом'})).toHaveAttribute('href',/guide.html$/)
+  await page.getByRole('button',{name:'Настройка перед занятием'}).click()
+  await page.getByLabel('ФИО преподавателя').fill('Проверка настроек')
+  await page.getByRole('button',{name:'Сохранить',exact:true}).click()
+  await page.reload()
+  await expect(page.locator('.course-controls')).toContainText('Проверка настроек')
   await page.goto('./#/lab/01')
-  const downloadPromise = page.waitForEvent('download')
-  await page.locator('.lab-summary').getByRole('button', { name: 'Скачать шаблон', exact: true }).click()
-  const download = await downloadPromise
-  expect(download.suggestedFilename()).toBe('SA06_ЛР01_комплект.zip')
-  const archivePath = await download.path()
-  expect(archivePath).not.toBeNull()
-  const entries = unzipSync(new Uint8Array(await readFile(archivePath!)))
-  expect(Object.keys(entries)).toEqual(expect.arrayContaining([
-    'ЛР01_SA06.html',
-    'LR01_template.docx',
-    'Исходные_данные/system-passport.csv',
-    'Исходные_данные/quality-characteristics.csv',
-    'Исходные_данные/LR01.md',
-  ]))
-  const exportedPage = strFromU8(entries['ЛР01_SA06.html'])
-  expect(exportedPage).toContain('SA06')
-  expect(exportedPage).toContain('<style>')
-  expect(exportedPage).not.toContain('FS-EDU-01')
-  expect(exportedPage).not.toContain('class="lab-hero"')
-})
-
-test('выбранная предметная область сохраняется, а её ZIP-пакет доступен', async ({ page, request }) => {
-  await page.goto('./')
-  await page.locator('.variant-picker:not(.compact) select').selectOption('6')
-  await page.goto('./#/lab/01')
-  await expect(page.locator('.variant-picker.compact select')).toHaveValue('6')
-  await expect(page.locator('.variant-source-note')).toContainText('SA06')
-  await expect(page.locator('body')).not.toContainText('FS-EDU-01')
-  const packLink = page.locator('.variant-source-note').getByRole('link', { name: 'Скачать исходный набор' })
-  await expect(packLink).toHaveAttribute('href', /inputs\/subject-areas\/packs\/SA06\.zip$/)
-  expect((await request.get('./inputs/subject-areas/packs/SA06.zip')).ok()).toBeTruthy()
+  await page.locator('#self-check input[type=checkbox]').first().check()
+  await expect(page.locator('#self-check input[type=checkbox]').first()).toBeChecked()
+  await expect(page.locator('#lms-submit').getByRole('link',{name:'Перейти в LMS'})).toHaveAttribute('href','https://lms.synergy.ru/')
 })

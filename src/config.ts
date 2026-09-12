@@ -1,5 +1,16 @@
 export const courseConfig = {
-  code: 'МДК04.02',
+  code: 'МДК.04.02',
+  discipline: 'Обеспечение качества функционирования компьютерных систем',
   title: 'МДК.04.02 «Обеспечение качества функционирования компьютерных систем»',
+  heroTitle: 'Качество системы',
+  heroAccent: 'подтверждаем практикой',
+  slogan: 'От фактов и расчётов — к обоснованной защите. Один вариант, связанные результаты и проверяемые решения.',
+  materialsUrl: 'https://disk.yandex.ru/d/Vz62H71Jub1GLA',
+  semesters: [7, 8],
+  logo: 'brand/synergy-logo.png',
+  mascot: 'brand/okfks-rhino.webp',
+  blocksTitle: 'Два профессиональных контура',
+  blocksDescription: 'В 7-м семестре измеряем надёжность и управляем эксплуатационными рисками. В 8-м защищаем те же активы и проверяем результат мер.',
+  demo: false,
   lmsUrl: 'https://lms.synergy.ru/',
 }

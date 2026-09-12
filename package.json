@@ -1,14 +1,14 @@
 {
   "name": "2026-okfks-lab",
   "private": true,
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "module",
   "engines": {
     "node": ">=22.14.0"
   },
   "scripts": {
     "dev": "vite",
-    "generate:subjects": "python scripts/generate_subject_areas.py",
+    "generate:subjects": "python scripts/refresh-source-packs.py",
     "export:lr01": "pnpm run build && node scripts/export_lr01_variants.mjs",
     "validate": "node scripts/validate-content.mjs",
     "typecheck": "tsc -b",
@@ -17,7 +17,9 @@
     "build": "pnpm run validate && pnpm run typecheck && vite build && node scripts/validate-dist.mjs",
     "preview": "vite preview",
     "test:e2e": "playwright test",
-    "check": "pnpm run lint && pnpm run test && pnpm run build"
+    "check": "pnpm run lint && pnpm run test && pnpm run build",
+    "adapt:content": "node scripts/adapt-context.mjs",
+    "generate:reports": "python scripts/update-reports.py"
   },
   "dependencies": {
     "fflate": "^0.8.3",

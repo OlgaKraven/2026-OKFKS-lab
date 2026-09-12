@@ -2,8 +2,41 @@ import { describe, expect, it } from 'vitest'
 import payload from '../src/data/labs.json'
 import { labMethodology } from '../src/data/methodology'
 import subjectPayload from '../src/data/subject-areas.json'
+import baseline from '../authoring/labs-baseline.json'
+import lectureReference from '../authoring/lecture-reference.json'
+import { personalizeText } from '../src/lib/personalize'
 
 describe('карта лабораторных работ', () => {
+  it('сохраняет каждую исходную тему, номер, балл, семестр и числовые данные', () => {
+    for(const [i,lab] of payload.labs.entries()) {
+      const old=baseline.labs[i]
+      for(const field of ['number','slug','title','points','semester','topicCode'] as const) expect(lab[field]).toEqual(old[field])
+      expect(lab.sourceData.sections.filter(s=>'table' in s).map(s=>s.table?.rows)).toEqual(old.sourceData.sections.filter(s=>'table' in s).map(s=>s.table?.rows))
+      expect(lab.rubric.reduce((sum,x)=>sum+x.points,0)).toBe(lab.points)
+    }
+  })
+  it('ссылается на существующие разделы лекций того же семестра', () => {
+    const examples=new Set<string>()
+    for(const lab of payload.labs){
+      const m=labMethodology[lab.number]
+      examples.add(m.example.source)
+      for(const link of m.lecture.links){
+        const lecture=lectureReference.lectures.find(l=>l.slides.some(s=>s.id===link.slideId))
+        expect(lecture?.semester).toBe(lab.semester)
+        expect(lecture?.slides.find(s=>s.id===link.slideId)?.kind).toBe('section')
+        expect(new URL(link.url).searchParams.get('slide')).toBe(link.slideId)
+      }
+    }
+    expect(examples.size).toBe(22)
+  })
+  it('подставляет функцию и активы каждого из 30 вариантов без остаточных маркеров', () => {
+    for(const area of subjectPayload.subjectAreas){
+      const result=personalizeText('{system} {systemCode} {criticalFunction} {assets}',1,area)
+      expect(result).toContain(area.criticalFunction)
+      expect(result).toContain(area.assets[0])
+      expect(result).not.toMatch(/[{}]/)
+    }
+  })
   it('содержит 22 уникальные работы на 100 баллов', () => {
     expect(payload.labs).toHaveLength(22)
     expect(new Set(payload.labs.map((lab) => lab.number)).size).toBe(22)

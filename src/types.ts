@@ -48,6 +48,7 @@ export interface SubjectArea {
 }
 
 export interface Lab {
+  rubric: {points:number;criterion:string;evidence:string}[]
   number: number
   slug: string
   title: string
