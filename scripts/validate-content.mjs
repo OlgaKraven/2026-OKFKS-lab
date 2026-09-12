@@ -35,7 +35,6 @@ const officialTitles = [
 const requiredArrays = ['outcomes', 'tools', 'theoryCards', 'task', 'stages', 'deliverables', 'evidence', 'selfCheck', 'wordRequirements', 'lmsSteps']
 const requiredStrings = ['slug', 'title', 'blockTitle', 'topicCode', 'topicTitle', 'practicalResult', 'situation', 'goal', 'professionalChoice', 'reportFile', 'recommendedFileName']
 const forbiddenPatterns = [
-  /\bминут/iu,
   /академическ\w*\s+час/iu,
   /перв(?:ый|ого)\s+час/iu,
   /втор(?:ая|ую)\s+половин\w*\s+занят/iu,
@@ -91,7 +90,7 @@ for (const lab of labs) {
   const serialized = JSON.stringify(lab)
   for (const pattern of forbiddenPatterns) if (pattern.test(serialized)) errors.push(`${prefix}: запрещённая формулировка ${pattern}.`)
   if ('course' in lab) errors.push(`${prefix}: запрещено выдуманное поле course.`)
-  if ('rubric' in lab) errors.push(`${prefix}: критерии оценивания должны быть удалены.`)
+  if (!Array.isArray(lab.rubric) || lab.rubric.reduce((n,x)=>n+x.points,0)!==lab.points) errors.push(`${prefix}: сумма критериев не соответствует баллам.`)
   if (/moodle/iu.test(serialized)) errors.push(`${prefix}: обозначение Moodle должно быть заменено на LMS.`)
 }
 

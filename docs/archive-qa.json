@@ -1,0 +1,10 @@
+{
+  "archive": "lab-all-variants.zip",
+  "variants": 30,
+  "labs": 22,
+  "sets": 660,
+  "files": 5134,
+  "bytes": 99619596,
+  "htmlDocxVariantMatch": true,
+  "csvBom": true
+}

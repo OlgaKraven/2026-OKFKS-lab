@@ -1,0 +1,561 @@
+{
+  "contentVersion": "2.0.0-lab-context",
+  "lectureContentVersion": "2.0.0-template-aba617d",
+  "templateCommit": "7bdc532c50c2559ffd3ee7fdcb0fba7edf05ebac",
+  "labs": [
+    {
+      "number": 1,
+      "title": "Сбор и классификация сведений об отказах заданной системы",
+      "semester": 7,
+      "points": 5,
+      "lectureId": "s07-01-quality-and-failures",
+      "lectureLinks": [
+        {
+          "title": "Ошибка, дефект и отказ",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s07-01-quality-and-failures&slide=s07-01-quality-and-failures-s046",
+          "slideId": "s07-01-quality-and-failures-s046"
+        },
+        {
+          "title": "Сбор и классификация событий",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s07-01-quality-and-failures&slide=s07-01-quality-and-failures-s079",
+          "slideId": "s07-01-quality-and-failures-s079"
+        },
+        {
+          "title": "Интерпретация статистики",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s07-01-quality-and-failures&slide=s07-01-quality-and-failures-s090",
+          "slideId": "s07-01-quality-and-failures-s090"
+        }
+      ],
+      "application": "Различайте причину, внутренний дефект и потерю требуемой функции. Одна неисправность может породить несколько сообщений: число строк журнала не равно числу независимых отказов.",
+      "previous": "Первая работа: зафиксируйте вариант, критичную функцию и признаки её штатного выполнения. Предыдущий отчёт не требуется.",
+      "next": "В ЛР02 передайте правила отбора отказов и связывания сообщений. Сам журнал ЛР02 — отдельное окно наблюдения; не складывайте его события с E01–E12. В ЛР04 используйте выявленные классы причин."
+    },
+    {
+      "number": 2,
+      "title": "Расчёт наработки на отказ и среднего времени восстановления по журналу",
+      "semester": 7,
+      "points": 5,
+      "lectureId": "s07-02-reliability-metrics",
+      "lectureLinks": [
+        {
+          "title": "Исходные данные",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s07-02-reliability-metrics&slide=s07-02-reliability-metrics-s013",
+          "slideId": "s07-02-reliability-metrics-s013"
+        },
+        {
+          "title": "Наработка на отказ",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s07-02-reliability-metrics&slide=s07-02-reliability-metrics-s024",
+          "slideId": "s07-02-reliability-metrics-s024"
+        },
+        {
+          "title": "Среднее время восстановления",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s07-02-reliability-metrics&slide=s07-02-reliability-metrics-s035",
+          "slideId": "s07-02-reliability-metrics-s035"
+        },
+        {
+          "title": "Подготовка журнала",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s07-02-reliability-metrics&slide=s07-02-reliability-metrics-s046",
+          "slideId": "s07-02-reliability-metrics-s046"
+        },
+        {
+          "title": "Единицы и период",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s07-02-reliability-metrics&slide=s07-02-reliability-metrics-s068",
+          "slideId": "s07-02-reliability-metrics-s068"
+        }
+      ],
+      "application": "Наработка и восстановление отвечают на разные вопросы. Сначала определите базу наблюдения, исключения и число завершённых эпизодов; только затем подставляйте часы в формулы.",
+      "previous": "Из ЛР01 возьмите правило «сообщение не равно отказу» и способ подтверждения восстановления. Для чисел используйте только журнал текущей работы.",
+      "next": "В ЛР03 передайте расчётную таблицу с единицами, исключениями и проверкой баланса. Там новая месячная сводка: переносится метод, а не числовые итоги ЛР02."
+    },
+    {
+      "number": 3,
+      "title": "Расчёт коэффициента готовности и оценка соответствия требованию",
+      "semester": 7,
+      "points": 5,
+      "lectureId": "s07-02-reliability-metrics",
+      "lectureLinks": [
+        {
+          "title": "Коэффициент готовности",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s07-02-reliability-metrics&slide=s07-02-reliability-metrics-s057",
+          "slideId": "s07-02-reliability-metrics-s057"
+        },
+        {
+          "title": "Единицы и период",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s07-02-reliability-metrics&slide=s07-02-reliability-metrics-s068",
+          "slideId": "s07-02-reliability-metrics-s068"
+        },
+        {
+          "title": "Сопоставление с требованием",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s07-02-reliability-metrics&slide=s07-02-reliability-metrics-s079",
+          "slideId": "s07-02-reliability-metrics-s079"
+        },
+        {
+          "title": "Ошибки вывода",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s07-02-reliability-metrics&slide=s07-02-reliability-metrics-s090",
+          "slideId": "s07-02-reliability-metrics-s090"
+        }
+      ],
+      "application": "Коэффициент готовности относится к определённой базе времени. Сравнивайте с требованием неокруглённое значение и отделяйте измеренную готовность от прогноза после предлагаемой меры.",
+      "previous": "Используйте структуру расчёта и баланс из ЛР02, но исходные отказы и требование REQ-AV-01 берите из этой работы.",
+      "next": "В ЛР04 передайте заключение о соответствии и причину потери готовности; в ЛР10 используйте обоснование приоритета, а не округлённую оценку без базы."
+    },
+    {
+      "number": 4,
+      "title": "Выявление дестабилизирующих факторов для заданной системы",
+      "semester": 7,
+      "points": 5,
+      "lectureId": "s07-03-reliability-threats-prevention",
+      "lectureLinks": [
+        {
+          "title": "Дестабилизирующий фактор",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s07-03-reliability-threats-prevention&slide=s07-03-reliability-threats-prevention-s013",
+          "slideId": "s07-03-reliability-threats-prevention-s013"
+        },
+        {
+          "title": "Причинно-следственная цепочка",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s07-03-reliability-threats-prevention&slide=s07-03-reliability-threats-prevention-s024",
+          "slideId": "s07-03-reliability-threats-prevention-s024"
+        }
+      ],
+      "application": "Дестабилизирующий фактор — условие возможного нарушения, а не уже доказанный отказ. Объясняйте цепочку «наблюдение — механизм — потеря функции»; P×I здесь учебный приоритет, а не вероятность в процентах.",
+      "previous": "Из ЛР01 возьмите классы причин, из ЛР03 — чувствительность готовности к простою. Наблюдения O01–O12 образуют новый срез состояния.",
+      "next": "В ЛР05 передайте фактор, связанный с входными данными; в ЛР06 — фактор состояния. В ЛР10 пригодятся три приоритета и обоснованные меры."
+    },
+    {
+      "number": 5,
+      "title": "Реализация контроля входных данных в заданном модуле",
+      "semester": 7,
+      "points": 5,
+      "lectureId": "s07-03-reliability-threats-prevention",
+      "lectureLinks": [
+        {
+          "title": "Контроль входных данных",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s07-03-reliability-threats-prevention&slide=s07-03-reliability-threats-prevention-s035",
+          "slideId": "s07-03-reliability-threats-prevention-s035"
+        }
+      ],
+      "application": "Контроль входа проверяет контракт до побочного действия. Корректная реакция содержит понятную ошибку и не допускает постановки недопустимой заявки в очередь. Граница проверяется с обеих сторон.",
+      "previous": "Используйте фактор некорректного ввода из ЛР04. Выданный validateRequest — отдельный учебный модуль; его контракт нельзя менять под удобные тесты.",
+      "next": "В ЛР06 передайте коды ошибок и правило блокировки недопустимого действия; в ЛР08 — события отказа в обработке без записи чувствительного входа. В ЛР20 повторите подход «ожидание до запуска»."
+    },
+    {
+      "number": 6,
+      "title": "Реализация проверки состояния и ограничения последствий отказа",
+      "semester": 7,
+      "points": 5,
+      "lectureId": "s07-03-reliability-threats-prevention",
+      "lectureLinks": [
+        {
+          "title": "Проверка состояния",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s07-03-reliability-threats-prevention&slide=s07-03-reliability-threats-prevention-s046",
+          "slideId": "s07-03-reliability-threats-prevention-s046"
+        },
+        {
+          "title": "Ограничение последствий",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s07-03-reliability-threats-prevention&slide=s07-03-reliability-threats-prevention-s057",
+          "slideId": "s07-03-reliability-threats-prevention-s057"
+        }
+      ],
+      "application": "Проверка состояния объединяет несколько признаков по явному правилу. Ответ «процесс запущен» недостаточен, если не выполняется полезная операция. Ограничение последствий должно сохранять уже принятые задания.",
+      "previous": "Из ЛР05 возьмите принцип проверки до принятия задания. Добавьте состояние зависимостей и ресурсов из ЛР04; не смешивайте ошибочный вход с отказом инфраструктуры.",
+      "next": "В ЛР07 передайте условия включения резервного пути и допустимые побочные эффекты. В ЛР08 — перечень причин состояния и необходимых событий уведомления."
+    },
+    {
+      "number": 7,
+      "title": "Применение программной избыточности и оценка её стоимости",
+      "semester": 7,
+      "points": 5,
+      "lectureId": "s07-03-reliability-threats-prevention",
+      "lectureLinks": [
+        {
+          "title": "Временная избыточность",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s07-03-reliability-threats-prevention&slide=s07-03-reliability-threats-prevention-s068",
+          "slideId": "s07-03-reliability-threats-prevention-s068"
+        },
+        {
+          "title": "Информационная и программная избыточность",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s07-03-reliability-threats-prevention&slide=s07-03-reliability-threats-prevention-s079",
+          "slideId": "s07-03-reliability-threats-prevention-s079"
+        },
+        {
+          "title": "Цена избыточности",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s07-03-reliability-threats-prevention&slide=s07-03-reliability-threats-prevention-s090",
+          "slideId": "s07-03-reliability-threats-prevention-s090"
+        }
+      ],
+      "application": "Избыточность оценивается по реально спасённым операциям и цене. Повтор безопасен только при контроле повторного побочного эффекта; общий источник сбоя может сделать резерв бесполезным.",
+      "previous": "Используйте признаки переключения и сохранения состояния из ЛР06. Проверяйте допущения каждой модели избыточности отдельно.",
+      "next": "В ЛР08 передайте события включения резервного пути и счётчик восстановленных операций. В ЛР10 используйте стоимость, ограничение и остаточный риск выбранной меры."
+    },
+    {
+      "number": 8,
+      "title": "Настройка ведения журналов и счётчиков заданной системы",
+      "semester": 7,
+      "points": 5,
+      "lectureId": "s07-04-observing-operating-system",
+      "lectureLinks": [
+        {
+          "title": "События журнала",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s07-04-observing-operating-system&slide=s07-04-observing-operating-system-s013",
+          "slideId": "s07-04-observing-operating-system-s013"
+        },
+        {
+          "title": "Счётчики и записи",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s07-04-observing-operating-system&slide=s07-04-observing-operating-system-s024",
+          "slideId": "s07-04-observing-operating-system-s024"
+        },
+        {
+          "title": "Показатели загрузки",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s07-04-observing-operating-system&slide=s07-04-observing-operating-system-s035",
+          "slideId": "s07-04-observing-operating-system-s035"
+        },
+        {
+          "title": "Постоянный контроль",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s07-04-observing-operating-system&slide=s07-04-observing-operating-system-s046",
+          "slideId": "s07-04-observing-operating-system-s046"
+        }
+      ],
+      "application": "Журнал объясняет отдельное событие, счётчик показывает динамику. Связь по ID операции позволяет понять, чем завершился резервный путь; секреты и содержимое пользовательских данных для этого не нужны.",
+      "previous": "Из ЛР05–ЛР07 возьмите коды отклонения, причины критического состояния и события резервирования. Выданные SC1–SC4 проверяют полноту набора наблюдений.",
+      "next": "В ЛР09 передайте схему журнала, единицы, пороги и правило сопоставления событий. Лента L01–L17 — отдельная диагностическая выгрузка, а не результат фактического запуска вашей настройки."
+    },
+    {
+      "number": 9,
+      "title": "Анализ журналов работающей системы и выявление предотказного состояния",
+      "semester": 7,
+      "points": 5,
+      "lectureId": "s07-04-observing-operating-system",
+      "lectureLinks": [
+        {
+          "title": "Предотказное состояние",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s07-04-observing-operating-system&slide=s07-04-observing-operating-system-s057",
+          "slideId": "s07-04-observing-operating-system-s057"
+        },
+        {
+          "title": "Анализ без ложной причинности",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s07-04-observing-operating-system&slide=s07-04-observing-operating-system-s068",
+          "slideId": "s07-04-observing-operating-system-s068"
+        }
+      ],
+      "application": "Предотказное состояние подтверждается развитием признаков до потери функции. Совпадение по времени не доказывает причину: сравните последовательность, механизм и альтернативное объяснение.",
+      "previous": "Используйте из ЛР08 различие события и счётчика, единицы и требования к доказательству. Читайте только выданную ленту текущей работы.",
+      "next": "В ЛР10 передайте хронологию, обоснованный ранний триггер, действие и недоказанную гипотезу. Гипотеза попадёт в реестр с указанием неопределённости."
+    },
+    {
+      "number": 10,
+      "title": "Составление реестра рисков эксплуатации с мерами реагирования",
+      "semester": 7,
+      "points": 5,
+      "lectureId": "s07-04-observing-operating-system",
+      "lectureLinks": [
+        {
+          "title": "Реестр рисков",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s07-04-observing-operating-system&slide=s07-04-observing-operating-system-s079",
+          "slideId": "s07-04-observing-operating-system-s079"
+        },
+        {
+          "title": "Модуль адаптации",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s07-04-observing-operating-system&slide=s07-04-observing-operating-system-s090",
+          "slideId": "s07-04-observing-operating-system-s090"
+        }
+      ],
+      "application": "Риск связывает условие, возможное событие и последствие. План реагирования начинается с наблюдаемого триггера; остаточная оценка меняется только для выбранной и обоснованной меры.",
+      "previous": "Из ЛР04 возьмите факторы, из ЛР07 — ограничения мер, из ЛР09 — ранние сигналы. R01–R08 и бюджет этой работы образуют самостоятельную расчётную модель.",
+      "next": "Передайте в ЛР11 активы, последствия нарушения доступности и три приоритета. Во втором семестре дополните их угрозами конфиденциальности и целостности; не выдавайте эксплуатационный риск за установленную атаку."
+    },
+    {
+      "number": 11,
+      "title": "Составление модели угроз для заданной компьютерной системы",
+      "semester": 8,
+      "points": 4,
+      "lectureId": "s08-01-threats-and-malware",
+      "lectureLinks": [
+        {
+          "title": "Угроза компьютерной системе",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s08-01-threats-and-malware&slide=s08-01-threats-and-malware-s013",
+          "slideId": "s08-01-threats-and-malware-s013"
+        },
+        {
+          "title": "Модель нарушителя",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s08-01-threats-and-malware&slide=s08-01-threats-and-malware-s046",
+          "slideId": "s08-01-threats-and-malware-s046"
+        },
+        {
+          "title": "Модель угроз как документ",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s08-01-threats-and-malware&slide=s08-01-threats-and-malware-s057",
+          "slideId": "s08-01-threats-and-malware-s057"
+        }
+      ],
+      "application": "Модель угроз строится от активов и границ доверия к возможностям нарушителя. Название вредоносной программы без пути воздействия и последствия ещё не является сценарием угрозы.",
+      "previous": "Возьмите паспорт того же варианта и реестр ЛР10. Сохраните последствия недоступности и добавьте раскрытие и изменение данных.",
+      "next": "В ЛР12 передайте приоритетный сценарий, его возможные признаки и затронутые активы. В ЛР13–ЛР19 используйте угрозы как основание выбора средств защиты."
+    },
+    {
+      "number": 12,
+      "title": "Обнаружение вредоносной программы и оценка последствий её работы",
+      "semester": 8,
+      "points": 4,
+      "lectureId": "s08-01-threats-and-malware",
+      "lectureLinks": [
+        {
+          "title": "Классы вредоносных программ",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s08-01-threats-and-malware&slide=s08-01-threats-and-malware-s068",
+          "slideId": "s08-01-threats-and-malware-s068"
+        },
+        {
+          "title": "Пути проникновения",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s08-01-threats-and-malware&slide=s08-01-threats-and-malware-s079",
+          "slideId": "s08-01-threats-and-malware-s079"
+        },
+        {
+          "title": "Безопасное обнаружение",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s08-01-threats-and-malware&slide=s08-01-threats-and-malware-s090",
+          "slideId": "s08-01-threats-and-malware-s090"
+        }
+      ],
+      "application": "Индикатор даёт основание для гипотезы, но не гарантирует заражение. Различайте наблюдаемое изменение, предполагаемый механизм и потенциальное последствие; сохраняйте доказательства до действий, которые их уничтожают.",
+      "previous": "Из модели ЛР11 возьмите путь воздействия и актив. Карточки U07 — учебный диагностический эпизод, а не разрешение запускать вредоносный образец.",
+      "next": "В ЛР13 передайте требования к обнаружению, журналу и восстановлению. В ЛР14 используйте последовательность фиксации события и реакции."
+    },
+    {
+      "number": 13,
+      "title": "Сравнительный анализ средств антивирусной защиты по заданным критериям",
+      "semester": 8,
+      "points": 4,
+      "lectureId": "s08-02-protection-controls",
+      "lectureLinks": [
+        {
+          "title": "Компоненты антивирусной защиты",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s08-02-protection-controls&slide=s08-02-protection-controls-s013",
+          "slideId": "s08-02-protection-controls-s013"
+        },
+        {
+          "title": "Режимы работы",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s08-02-protection-controls&slide=s08-02-protection-controls-s024",
+          "slideId": "s08-02-protection-controls-s024"
+        },
+        {
+          "title": "Сравнение средств",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s08-02-protection-controls&slide=s08-02-protection-controls-s035",
+          "slideId": "s08-02-protection-controls-s035"
+        }
+      ],
+      "application": "Сначала отсейте кандидатов, нарушающих обязательное ограничение, затем сравнивайте допустимых по единой шкале. Высокий суммарный балл не компенсирует невыполнение обязательного требования.",
+      "previous": "Из ЛР11–ЛР12 возьмите угрозы, необходимые функции обнаружения и журналирования. Три продукта — учебные карточки, не рыночная рекомендация.",
+      "next": "В ЛР14 передайте перечень нужных функций и критерии проверки. Настройки табличного симулятора ЛР14 проверяются по своему регламенту, без выдуманного соответствия реальному продукту."
+    },
+    {
+      "number": 14,
+      "title": "Настройка средства антивирусной защиты и проверка его действия",
+      "semester": 8,
+      "points": 4,
+      "lectureId": "s08-02-protection-controls",
+      "lectureLinks": [
+        {
+          "title": "Компоненты антивирусной защиты",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s08-02-protection-controls&slide=s08-02-protection-controls-s013",
+          "slideId": "s08-02-protection-controls-s013"
+        },
+        {
+          "title": "Режимы работы",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s08-02-protection-controls&slide=s08-02-protection-controls-s024",
+          "slideId": "s08-02-protection-controls-s024"
+        }
+      ],
+      "application": "Настройка защиты считается проверенной после сопоставления требования, параметра и результата события. Обязательно проверяйте разрешённые действия: блокировка всего не является корректной защитой.",
+      "previous": "Используйте требования к функциям из ЛР13 и признаки из ЛР12. R1–R7 задают точный контракт этой учебной конфигурации.",
+      "next": "В ЛР20 передайте формат протокола «требование — тест — ожидание — факт — статус», в ЛР21 — список доказательств настройки и её границ."
+    },
+    {
+      "number": 15,
+      "title": "Настройка правил сетевого экрана и проверка прохождения разрешённого и запрещённого трафика",
+      "semester": 8,
+      "points": 4,
+      "lectureId": "s08-02-protection-controls",
+      "lectureLinks": [
+        {
+          "title": "Назначение сетевого экрана",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s08-02-protection-controls&slide=s08-02-protection-controls-s046",
+          "slideId": "s08-02-protection-controls-s046"
+        },
+        {
+          "title": "Проектирование правил",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s08-02-protection-controls&slide=s08-02-protection-controls-s057",
+          "slideId": "s08-02-protection-controls-s057"
+        }
+      ],
+      "application": "Сетевой экран применяет правила к направлению, протоколу, адресам и портам. При первом совпадении порядок правил влияет на решение; широкое раннее разрешение скрывает поздний запрет.",
+      "previous": "Из ЛР11 возьмите границы доверия и потоки. Из ЛР14 — обязательную пару разрешённого и запрещённого проверочного действия.",
+      "next": "В ЛР19 передайте разрешённый канал и его конечные точки: разрешение порта ещё не шифрует трафик. В ЛР20–ЛР21 используйте протокол проверки правил."
+    },
+    {
+      "number": 16,
+      "title": "Настройка парольной политики и проверка её действия",
+      "semester": 8,
+      "points": 4,
+      "lectureId": "s08-02-protection-controls",
+      "lectureLinks": [
+        {
+          "title": "Аутентификация и полномочия",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s08-02-protection-controls&slide=s08-02-protection-controls-s068",
+          "slideId": "s08-02-protection-controls-s068"
+        },
+        {
+          "title": "Парольная политика",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s08-02-protection-controls&slide=s08-02-protection-controls-s079",
+          "slideId": "s08-02-protection-controls-s079"
+        }
+      ],
+      "application": "Парольная политика регулирует аутентификацию, а не полномочия. Проверка длины, запретов и блокировки должна точно следовать учебному регламенту; его числа не объявляются универсальным стандартом.",
+      "previous": "Из ЛР11 возьмите угрозу учётной записи. Из ЛР05 — проверку граничных значений и предварительную запись ожидания.",
+      "next": "В ЛР17 передайте различие «кто вошёл» и «что ему разрешено». В ЛР20 и ЛР21 пригодятся протокол пограничных случаев и ограничения политики."
+    },
+    {
+      "number": 17,
+      "title": "Разграничение прав доступа к ресурсам системы",
+      "semester": 8,
+      "points": 4,
+      "lectureId": "s08-02-protection-controls",
+      "lectureLinks": [
+        {
+          "title": "Аутентификация и полномочия",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s08-02-protection-controls&slide=s08-02-protection-controls-s068",
+          "slideId": "s08-02-protection-controls-s068"
+        },
+        {
+          "title": "Минимально необходимые права",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s08-02-protection-controls&slide=s08-02-protection-controls-s090",
+          "slideId": "s08-02-protection-controls-s090"
+        }
+      ],
+      "application": "Полномочие связывает роль, ресурс и действие. Минимальные права обосновываются рабочей функцией; объединение двух допустимых ролей может создать недопустимый конфликт полномочий.",
+      "previous": "Используйте роли модели ЛР11 и различие аутентификации и авторизации из ЛР16. Сетевое разрешение ЛР15 не заменяет проверку роли.",
+      "next": "В ЛР18 передайте роли штатного доступа и восстановления ключей. В ЛР20 — негативные проверки прав, в ЛР21 — доказательства матрицы."
+    },
+    {
+      "number": 18,
+      "title": "Шифрование данных при хранении",
+      "semester": 8,
+      "points": 4,
+      "lectureId": "s08-03-encryption-and-security-testing",
+      "lectureLinks": [
+        {
+          "title": "Задача шифрования",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s08-03-encryption-and-security-testing&slide=s08-03-encryption-and-security-testing-s013",
+          "slideId": "s08-03-encryption-and-security-testing-s013"
+        },
+        {
+          "title": "Хранение и передача",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s08-03-encryption-and-security-testing&slide=s08-03-encryption-and-security-testing-s024",
+          "slideId": "s08-03-encryption-and-security-testing-s024"
+        },
+        {
+          "title": "Алгоритм, протокол, ключ и средство",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s08-03-encryption-and-security-testing&slide=s08-03-encryption-and-security-testing-s035",
+          "slideId": "s08-03-encryption-and-security-testing-s035"
+        },
+        {
+          "title": "Управление учебными ключами",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s08-03-encryption-and-security-testing&slide=s08-03-encryption-and-security-testing-s046",
+          "slideId": "s08-03-encryption-and-security-testing-s046"
+        },
+        {
+          "title": "Проверка результата",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s08-03-encryption-and-security-testing&slide=s08-03-encryption-and-security-testing-s057",
+          "slideId": "s08-03-encryption-and-security-testing-s057"
+        }
+      ],
+      "application": "Шифрование хранения защищает данные в определённом состоянии носителя. Разблокированный том доступен в пределах полномочий; шифрование не заменяет резервную копию и управление ключом восстановления.",
+      "previous": "Из ЛР11 возьмите активы, из ЛР17 — роли доступа и восстановления. Требования D1–D4 и методы M1–M4 относятся к учебным наборам этой работы.",
+      "next": "В ЛР19 передайте границу защиты хранения: данные при передаче требуют отдельного канала. В ЛР21 передайте схему ключей, результаты проверок и незакрытые риски."
+    },
+    {
+      "number": 19,
+      "title": "Защита передаваемых данных с применением протокола шифрования",
+      "semester": 8,
+      "points": 4,
+      "lectureId": "s08-03-encryption-and-security-testing",
+      "lectureLinks": [
+        {
+          "title": "Хранение и передача",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s08-03-encryption-and-security-testing&slide=s08-03-encryption-and-security-testing-s024",
+          "slideId": "s08-03-encryption-and-security-testing-s024"
+        },
+        {
+          "title": "Алгоритм, протокол, ключ и средство",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s08-03-encryption-and-security-testing&slide=s08-03-encryption-and-security-testing-s035",
+          "slideId": "s08-03-encryption-and-security-testing-s035"
+        },
+        {
+          "title": "Проверка результата",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s08-03-encryption-and-security-testing&slide=s08-03-encryption-and-security-testing-s057",
+          "slideId": "s08-03-encryption-and-security-testing-s057"
+        }
+      ],
+      "application": "Защищённый канал требует проверки узла и параметров соединения. Открытый порт и символ замка сами по себе не доказывают правильность имени, сертификата и защиты конечных устройств.",
+      "previous": "Из ЛР15 возьмите понятие разрешённого потока, из ЛР18 — границу защиты диска. C1–C4 в этой работе являются ID соединений, а не кодами характеристик профиля.",
+      "next": "В ЛР20 передайте проверяемые требования к каналу, в ЛР21 — параметры и ограничения. Содержимое на конечных устройствах проверяется отдельно от шифрования передачи."
+    },
+    {
+      "number": 20,
+      "title": "Тестирование защиты программного обеспечения по заданному набору проверок",
+      "semester": 8,
+      "points": 4,
+      "lectureId": "s08-03-encryption-and-security-testing",
+      "lectureLinks": [
+        {
+          "title": "Проверка результата",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s08-03-encryption-and-security-testing&slide=s08-03-encryption-and-security-testing-s057",
+          "slideId": "s08-03-encryption-and-security-testing-s057"
+        },
+        {
+          "title": "Набор проверок защиты",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s08-03-encryption-and-security-testing&slide=s08-03-encryption-and-security-testing-s068",
+          "slideId": "s08-03-encryption-and-security-testing-s068"
+        }
+      ],
+      "application": "Тест имеет независимое ожидаемое поведение, фактический результат и доказательство. Переписывание ожидания под текущий ответ скрывает дефект; повторное тестирование проверяет исправление и затронутые функции.",
+      "previous": "Используйте форму протокола ЛР14 и отрицательные сценарии ЛР15–ЛР19. RESP-01–RESP-11 — фиксированные результаты отдельной версии приложения.",
+      "next": "В ЛР21 передайте карточки дефектов, подтверждения и список непроверенного. В ЛР22 используйте правило проверяемого закрытия исправления."
+    },
+    {
+      "number": 21,
+      "title": "Проверка защищённости системы по регламенту и оформление заключения",
+      "semester": 8,
+      "points": 4,
+      "lectureId": "s08-03-encryption-and-security-testing",
+      "lectureLinks": [
+        {
+          "title": "Проверка по регламенту",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s08-03-encryption-and-security-testing&slide=s08-03-encryption-and-security-testing-s079",
+          "slideId": "s08-03-encryption-and-security-testing-s079"
+        },
+        {
+          "title": "Заключение и меры",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s08-03-encryption-and-security-testing&slide=s08-03-encryption-and-security-testing-s090",
+          "slideId": "s08-03-encryption-and-security-testing-s090"
+        }
+      ],
+      "application": "Заключение ограничено областью, датой и доступными доказательствами. Отсутствие подтверждения — отдельный статус, его нельзя автоматически объявить ни соответствием, ни установленной уязвимостью.",
+      "previous": "Возьмите подход к доказательствам ЛР20 и ограничения защиты ЛР14–ЛР19. E01–E14 — отдельный пакет аудита; не подменяйте их собственными прогнозами настроек.",
+      "next": "В ЛР22 передайте реестр несоответствий, неопределённостей и риск. F1–F8 там — заданный реестр следующего учебного аудита: составьте смысловое сопоставление, а не выдумывайте равенство ID."
+    },
+    {
+      "number": 22,
+      "title": "Разработка предложений по устранению выявленных недостатков защиты",
+      "semester": 8,
+      "points": 6,
+      "lectureId": "s08-03-encryption-and-security-testing",
+      "lectureLinks": [
+        {
+          "title": "Заключение и меры",
+          "url": "https://olgakraven.github.io/2026-OKFKS-lecture/?lecture=s08-03-encryption-and-security-testing&slide=s08-03-encryption-and-security-testing-s090",
+          "slideId": "s08-03-encryption-and-security-testing-s090"
+        }
+      ],
+      "application": "План исправлений связывает недостаток с причиной, мерой, ресурсом, зависимостью и повторной проверкой. Снижение риска в модели не считается фактом до проверки внедрения.",
+      "previous": "Используйте структуру заключения ЛР21 и бюджетный подход ЛР10. Сопоставьте один недостаток F1–F8 с аналогичным типом проблемы из своего аудита; числовые модели не смешивайте.",
+      "next": "Итог курса: сохраните паспорт варианта, реестр мер и ссылки на доказательства ЛР01–ЛР21. План передаётся в следующий цикл проверки: для каждой меры указаны критерий закрытия и остаточный риск."
+    }
+  ]
+}
